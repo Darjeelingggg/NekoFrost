@@ -104,7 +104,7 @@ export default function WhatsAppButton() {
           </div>
 
           <p className="text-[10px] text-center text-[#8C9BAE] mt-3">
-            Stand Buka • Siap Antar ke Kelas &amp; Kosan
+            Stand Buka • Siap Antar ke Kelas &amp;
           </p>
         </div>
       )}
