@@ -27,6 +27,7 @@ export default function CheckoutModal() {
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"qris" | "transfer" | "cash">("qris");
   const [proofFileName, setProofFileName] = useState("");
+  const [proofDataUrl, setProofDataUrl] = useState("");
   const [copiedAccount, setCopiedAccount] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -46,7 +47,43 @@ export default function CheckoutModal() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setProofFileName(e.target.files[0].name);
+      const file = e.target.files[0];
+      setProofFileName(file.name);
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const rawUrl = event.target?.result as string;
+        const img = new window.Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 800;
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL("image/jpeg", 0.75);
+            setProofDataUrl(compressed);
+          } else {
+            setProofDataUrl(rawUrl);
+          }
+        };
+        img.src = rawUrl;
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -83,7 +120,7 @@ export default function CheckoutModal() {
         })),
         totalPrice: cartTotal,
         paymentMethod,
-        paymentProofUrl: proofFileName ? `uploaded_${proofFileName}` : undefined,
+        paymentProofUrl: proofDataUrl || (proofFileName ? `uploaded_${proofFileName}` : undefined),
       });
 
       setIsSubmitting(false);

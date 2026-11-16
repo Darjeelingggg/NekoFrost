@@ -18,6 +18,8 @@ import {
   Trash2,
   RotateCw,
   Database,
+  Eye,
+  X,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { OrderStatus, Product } from "@/types";
@@ -40,6 +42,11 @@ export default function AdminPage() {
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [viewingProof, setViewingProof] = useState<{
+    orderId: string;
+    customerName: string;
+    url: string;
+  } | null>(null);
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<"orders" | "products">("orders");
@@ -480,6 +487,23 @@ export default function AdminPage() {
                           <span>
                             <b>Pembayaran:</b> {order.paymentMethod.toUpperCase()}
                           </span>
+                          {order.paymentProofUrl && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setViewingProof({
+                                  orderId: order.id,
+                                  customerName: order.customerName,
+                                  url: order.paymentProofUrl!,
+                                })
+                              }
+                              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors text-[11px] font-bold border border-emerald-300 shadow-xs active:scale-95"
+                              title="Klik untuk melihat foto bukti transfer asli"
+                            >
+                              <Eye className="w-3 h-3 text-emerald-700" />
+                              <span>Lihat Bukti Bayar</span>
+                            </button>
+                          )}
                         </div>
 
                         <div className="bg-[#FAF8F2] p-2.5 rounded-xl border border-[#E8E3D8] text-xs space-y-1">
@@ -756,6 +780,52 @@ export default function AdminPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+        {/* Proof of Payment Viewer Modal */}
+        {viewingProof && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fadeIn">
+            <div className="relative w-full max-w-md bg-white rounded-3xl p-5 shadow-2xl border border-[#E2DDD0] space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-[#EFEBE1]">
+                <div>
+                  <h3 className="text-base font-bold text-[#1E447C]">
+                    Bukti Pembayaran #{viewingProof.orderId}
+                  </h3>
+                  <p className="text-xs text-[#7C8B9E]">
+                    Pemesan: <b>{viewingProof.customerName}</b>
+                  </p>
+                </div>
+                <button
+                  onClick={() => setViewingProof(null)}
+                  className="p-1.5 rounded-full hover:bg-[#F1EDE1] text-[#7C8B9E] transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="relative rounded-2xl overflow-hidden bg-[#FAF8F2] border border-[#E2DDD0] max-h-[65vh] flex items-center justify-center p-2">
+                {viewingProof.url.startsWith("data:") || viewingProof.url.startsWith("http") ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={viewingProof.url}
+                    alt="Bukti Transfer Pembeli"
+                    className="max-h-[58vh] w-auto object-contain rounded-xl shadow-xs"
+                  />
+                ) : (
+                  <div className="p-8 text-center text-[#7C8B9E]">
+                    <p className="text-sm font-semibold text-[#1E447C]">File Bukti: {viewingProof.url}</p>
+                    <p className="text-xs mt-1">Nama file bukti terlampir.</p>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => setViewingProof(null)}
+                className="w-full py-2.5 rounded-xl bg-[#2B5EA9] text-white text-xs font-bold hover:bg-[#1E447C] transition-colors"
+              >
+                Tutup Pratinjau
+              </button>
             </div>
           </div>
         )}
