@@ -786,47 +786,60 @@ export default function AdminPage() {
         {/* Proof of Payment Viewer Modal */}
         {viewingProof && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-fadeIn">
-            <div className="relative w-full max-w-md bg-white rounded-3xl p-5 shadow-2xl border border-[#E2DDD0] space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-[#EFEBE1]">
-                <div>
-                  <h3 className="text-base font-bold text-[#1E447C]">
-                    Bukti Pembayaran #{viewingProof.orderId}
-                  </h3>
-                  <p className="text-xs text-[#7C8B9E]">
-                    Pemesan: <b>{viewingProof.customerName}</b>
-                  </p>
-                </div>
-                <button
-                  onClick={() => setViewingProof(null)}
-                  className="p-1.5 rounded-full hover:bg-[#F1EDE1] text-[#7C8B9E] transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+            <div className="relative w-full max-w-lg bg-white rounded-3xl p-5 sm:p-6 shadow-2xl border border-[#E2DDD0] space-y-4 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-[#EFEBE1] flex-shrink-0">
+              <div>
+                <h3 className="text-base font-bold text-[#1E447C]">
+                  Bukti Pembayaran #{viewingProof.orderId}
+                </h3>
+                <p className="text-xs text-[#7C8B9E]">
+                  Pemesan: <b>{viewingProof.customerName}</b>
+                </p>
               </div>
-
-              <div className="relative rounded-2xl overflow-hidden bg-[#FAF8F2] border border-[#E2DDD0] max-h-[65vh] flex items-center justify-center p-2">
-                {viewingProof.url.startsWith("data:") || viewingProof.url.startsWith("http") ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={viewingProof.url}
-                    alt="Bukti Transfer Pembeli"
-                    className="max-h-[58vh] w-auto object-contain rounded-xl shadow-xs"
-                  />
-                ) : (
-                  <div className="p-8 text-center text-[#7C8B9E]">
-                    <p className="text-sm font-semibold text-[#1E447C]">File Bukti: {viewingProof.url}</p>
-                    <p className="text-xs mt-1">Nama file bukti terlampir.</p>
-                  </div>
-                )}
-              </div>
-
               <button
                 onClick={() => setViewingProof(null)}
-                className="w-full py-2.5 rounded-xl bg-[#2B5EA9] text-white text-xs font-bold hover:bg-[#1E447C] transition-colors"
+                className="p-1.5 rounded-full hover:bg-[#F1EDE1] text-[#7C8B9E] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="relative rounded-2xl overflow-hidden bg-[#FAF8F2] border border-[#E2DDD0] flex-1 flex items-center justify-center p-2 min-h-[280px]">
+              {viewingProof.url.startsWith("data:") || viewingProof.url.startsWith("http") ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={viewingProof.url}
+                  alt="Bukti Transfer Pembeli"
+                  className="max-h-[62vh] w-auto max-w-full object-contain rounded-xl shadow-sm"
+                />
+              ) : (
+                <div className="p-8 text-center text-[#7C8B9E]">
+                  <p className="text-sm font-semibold text-[#1E447C]">File Bukti: {viewingProof.url}</p>
+                  <p className="text-xs mt-1 text-amber-600">
+                    Pesanan ini dibuat sebelum sistem gambar live diaktifkan. Pesanan baru berikutnya akan langsung menampilkan foto screenshot bukti transfer di sini!
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between gap-3 pt-2 flex-shrink-0">
+              {viewingProof.url.startsWith("data:") && (
+                <a
+                  href={viewingProof.url}
+                  download={`bukti_bayar_${viewingProof.orderId}.jpg`}
+                  className="px-4 py-2.5 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition-colors border border-emerald-300"
+                >
+                  Unduh Foto Bukti
+                </a>
+              )}
+              <button
+                onClick={() => setViewingProof(null)}
+                className="flex-1 py-2.5 rounded-xl bg-[#2B5EA9] text-white text-xs font-bold hover:bg-[#1E447C] transition-colors"
               >
                 Tutup Pratinjau
               </button>
             </div>
+          </div>
           </div>
         )}
       </main>

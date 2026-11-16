@@ -28,6 +28,7 @@ export default function CheckoutModal() {
   const [paymentMethod, setPaymentMethod] = useState<"qris" | "transfer" | "cash">("qris");
   const [proofFileName, setProofFileName] = useState("");
   const [proofDataUrl, setProofDataUrl] = useState("");
+  const [isReadingProof, setIsReadingProof] = useState(false);
   const [copiedAccount, setCopiedAccount] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -49,39 +50,58 @@ export default function CheckoutModal() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setProofFileName(file.name);
+      setIsReadingProof(true);
 
       const reader = new FileReader();
       reader.onload = (event) => {
         const rawUrl = event.target?.result as string;
+        if (!rawUrl) {
+          setIsReadingProof(false);
+          return;
+        }
+
         const img = new window.Image();
         img.onload = () => {
-          const canvas = document.createElement("canvas");
-          let width = img.width;
-          let height = img.height;
-          const maxDim = 800;
+          try {
+            const canvas = document.createElement("canvas");
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 800;
 
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
             }
-          }
 
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            const compressed = canvas.toDataURL("image/jpeg", 0.75);
-            setProofDataUrl(compressed);
-          } else {
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, width, height);
+              const compressed = canvas.toDataURL("image/jpeg", 0.75);
+              setProofDataUrl(compressed);
+            } else {
+              setProofDataUrl(rawUrl);
+            }
+          } catch (err) {
             setProofDataUrl(rawUrl);
+          } finally {
+            setIsReadingProof(false);
           }
         };
+        img.onerror = () => {
+          setProofDataUrl(rawUrl);
+          setIsReadingProof(false);
+        };
         img.src = rawUrl;
+      };
+      reader.onerror = () => {
+        setIsReadingProof(false);
       };
       reader.readAsDataURL(file);
     }
@@ -97,8 +117,12 @@ export default function CheckoutModal() {
       alert("Mohon cantumkan lokasi pengantaran (Kelas/Lantai/Lobby).");
       return;
     }
-    if (paymentMethod !== "cash" && !proofFileName) {
-      alert("PENTING: Wajib lampirkan foto bukti pembayaran transfer / QRIS terlebih dahulu sebelum membuat pesanan!");
+    if (paymentMethod !== "cash" && !proofDataUrl) {
+      if (isReadingProof) {
+        alert("Foto bukti pembayaran sedang diproses, silakan tunggu sebentar dan klik lagi.");
+      } else {
+        alert("PENTING: Wajib lampirkan foto bukti pembayaran transfer / QRIS terlebih dahulu!");
+      }
       return;
     }
 
@@ -120,7 +144,7 @@ export default function CheckoutModal() {
         })),
         totalPrice: cartTotal,
         paymentMethod,
-        paymentProofUrl: proofDataUrl || (proofFileName ? `uploaded_${proofFileName}` : undefined),
+        paymentProofUrl: proofDataUrl || undefined,
       });
 
       setIsSubmitting(false);
@@ -412,6 +436,22 @@ export default function CheckoutModal() {
                     className="hidden"
                   />
                 </label>
+
+                {/* Instant Image Preview Thumbnail */}
+                {proofDataUrl && (
+                  <div className="relative w-full h-36 rounded-xl overflow-hidden border-2 border-emerald-400 bg-black/5 flex items-center justify-center p-1.5 shadow-inner">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={proofDataUrl}
+                      alt="Pratinjau Bukti Transfer"
+                      className="max-h-full max-w-full object-contain rounded-lg"
+                    />
+                    <div className="absolute top-2 right-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                      <Check className="w-3 h-3" />
+                      <span>Foto Terverifikasi</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -425,7 +465,7 @@ export default function CheckoutModal() {
               </div>
 
               {/* Warning if cashless but proof is missing */}
-              {paymentMethod !== "cash" && !proofFileName && (
+              {paymentMethod !== "cash" && !proofDataUrl && (
                 <div className="mb-3 p-2.5 rounded-xl bg-rose-500/20 border border-rose-400/30 text-rose-200 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-[#EBA9B5] flex-shrink-0" />
                   <span className="text-[11px] font-medium leading-tight">
@@ -436,9 +476,9 @@ export default function CheckoutModal() {
 
               <button
                 type="submit"
-                disabled={isSubmitting || (paymentMethod !== "cash" && !proofFileName)}
+                disabled={isSubmitting || (paymentMethod !== "cash" && !proofDataUrl)}
                 className={`w-full py-3.5 rounded-full font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-md active:scale-95 ${
-                  paymentMethod !== "cash" && !proofFileName
+                  paymentMethod !== "cash" && !proofDataUrl
                     ? "bg-[#617B9F] text-[#D8E6F8] cursor-not-allowed opacity-60"
                     : "bg-[#EBA9B5] text-[#1E447C] hover:bg-[#f2bcc5]"
                 }`}
