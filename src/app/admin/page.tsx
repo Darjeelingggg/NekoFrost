@@ -169,27 +169,32 @@ export default function AdminPage() {
           </div>
 
           <h1 className="text-xl font-serif font-bold text-[#1E447C]">
-            Portal Admin Kelompok
+            Portal Khusus Admin
           </h1>
           <p className="text-xs text-[#7C8B9E] mt-1 mb-6">
-            Masukkan PIN rahasia kelompok untuk mengelola pesanan & menu SISFOR.
+            Eits, mau ngapain hayoo? Area terlarang nih, cuma tim NekoFrost yang boleh masuk!
           </p>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <input
                 type="password"
-                placeholder="PIN (Default: admin123)"
+                placeholder="Masukkan PIN Rahasia..."
                 value={pinInput}
                 onChange={(e) => setPinInput(e.target.value)}
                 className="w-full text-center px-4 py-3 rounded-2xl border border-[#D0D9E6] text-sm text-[#1E447C] focus:outline-none focus:ring-2 focus:ring-[#2B5EA9] tracking-widest font-mono bg-[#F8FAFC]"
                 autoFocus
               />
               {pinError && (
-                <p className="text-xs text-rose-600 mt-1.5 flex items-center justify-center gap-1 font-medium">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  <span>PIN salah. Gunakan: <b>admin123</b></span>
-                </p>
+                <div className="mt-2.5 p-2 rounded-xl bg-rose-50 border border-rose-200">
+                  <p className="text-xs text-rose-600 font-bold flex items-center justify-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>Cieee mau ngintip ya? Salah PIN-nya wkwk!</span>
+                  </p>
+                  <p className="text-[10px] text-rose-500 mt-0.5">
+                    Bukan admin mah minggir dulu bos, jajan Chichick dulu sana gih!
+                  </p>
+                </div>
               )}
             </div>
 
