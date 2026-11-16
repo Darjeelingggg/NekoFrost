@@ -75,7 +75,7 @@ export const initialProducts: Product[] = [
     calories: "390 kcal",
     likes: 740,
     available: true,
-    image: "/images/chichick-box.png",
+    image: "/images/chichick-keju.png",
   },
   {
     id: "chk-kentang",
@@ -89,7 +89,7 @@ export const initialProducts: Product[] = [
     calories: "490 kcal",
     likes: 610,
     available: true,
-    image: "/images/paket-komplit.png",
+    image: "/images/chichick-kentang.png",
   },
 
   // --- MENU SATUAN: KENTANG GORENG ---
@@ -119,7 +119,7 @@ export const initialProducts: Product[] = [
     calories: "280 kcal",
     likes: 480,
     available: true,
-    image: "/images/kentang-box.png",
+    image: "/images/kentang-keju.png",
   },
 
   // --- MENU SATUAN: RISOL MANIS ---
