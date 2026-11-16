@@ -1,0 +1,372 @@
+"use client";
+
+import React, { useState } from "react";
+import Image from "next/image";
+import {
+  X,
+  QrCode,
+  CreditCard,
+  Banknote,
+  Copy,
+  Check,
+  MapPin,
+  Clock,
+  UploadCloud,
+} from "lucide-react";
+import { useApp } from "@/context/AppContext";
+
+export default function CheckoutModal() {
+  const { isCheckoutOpen, setIsCheckoutOpen, cart, cartTotal, createOrder } =
+    useApp();
+
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [orderType, setOrderType] = useState<"pickup" | "delivery">("pickup");
+  const [deliveryLocation, setDeliveryLocation] = useState("");
+  const [notes, setNotes] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"qris" | "transfer" | "cash">("qris");
+  const [proofFileName, setProofFileName] = useState("");
+  const [copiedAccount, setCopiedAccount] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isCheckoutOpen) return null;
+
+  const formattedTotal = new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 0,
+  }).format(cartTotal);
+
+  const handleCopyAccount = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedAccount(true);
+    setTimeout(() => setCopiedAccount(false), 2000);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setProofFileName(e.target.files[0].name);
+    }
+  };
+
+  const handleSubmitOrder = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerName.trim() || !customerPhone.trim()) {
+      alert("Mohon isi nama dan nomor WhatsApp Anda.");
+      return;
+    }
+    if (orderType === "delivery" && !deliveryLocation.trim()) {
+      alert("Mohon cantumkan lokasi pengantaran (Kelas/Lantai/Lobby).");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    setTimeout(() => {
+      createOrder({
+        customerName,
+        customerPhone,
+        orderType,
+        deliveryLocation: orderType === "delivery" ? deliveryLocation : "Ambil di Stand",
+        notes,
+        items: cart.map((item) => ({
+          productId: item.product.id,
+          productName: item.product.name,
+          price: item.product.price,
+          quantity: item.quantity,
+          notes: item.notes,
+        })),
+        totalPrice: cartTotal,
+        paymentMethod,
+        paymentProofUrl: proofFileName ? `uploaded_${proofFileName}` : undefined,
+      });
+
+      setIsSubmitting(false);
+      setIsCheckoutOpen(false);
+    }, 700);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-fadeIn">
+      <div className="relative w-full max-w-lg max-h-[92vh] bg-[#F1EDE1] rounded-3xl shadow-2xl overflow-y-auto no-scrollbar border border-[#E2DDD0]">
+
+        {/* Modal Header */}
+        <div className="sticky top-0 z-10 px-6 py-4 bg-[#F1EDE1]/95 backdrop-blur-sm border-b border-[#E2DDD0] flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-serif font-bold text-[#1E447C]">
+              Checkout Pesanan
+            </h2>
+            <p className="text-xs text-[#7C8B9E]">
+              Pemesanan Mudah & Praktis
+            </p>
+          </div>
+          <button
+            onClick={() => setIsCheckoutOpen(false)}
+            className="p-1.5 rounded-full hover:bg-white/60 text-[#2B5EA9] transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmitOrder} className="p-6 space-y-5">
+          {/* Section 1: Customer Info */}
+          <div className="bg-white rounded-2xl p-4 border border-[#E2DDD0] space-y-3">
+            <h3 className="text-xs font-bold text-[#1E447C] uppercase tracking-wider">
+              1. Data Pemesan
+            </h3>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#67778E] mb-1">
+                Nama Lengkap / Panggilan *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="Contoh: Raihan"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-[#D0D9E6] text-sm text-[#1E447C] focus:outline-none focus:ring-2 focus:ring-[#2B5EA9] bg-[#F8FAFC]"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#67778E] mb-1">
+                Nomor WhatsApp Aktif *
+              </label>
+              <input
+                type="tel"
+                required
+                placeholder="Contoh: 081234567890"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-[#D0D9E6] text-sm text-[#1E447C] focus:outline-none focus:ring-2 focus:ring-[#2B5EA9] bg-[#F8FAFC]"
+              />
+              <span className="text-[10px] text-[#8C9BAE] mt-0.5 block">
+                Notifikasi dan konfirmasi pesanan akan dikirim ke nomor ini.
+              </span>
+            </div>
+          </div>
+
+          {/* Section 2: Order Type */}
+          <div className="bg-white rounded-2xl p-4 border border-[#E2DDD0] space-y-3">
+            <h3 className="text-xs font-bold text-[#1E447C] uppercase tracking-wider">
+              2. Metode Pengambilan
+            </h3>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setOrderType("pickup")}
+                className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${orderType === "pickup"
+                    ? "border-[#2B5EA9] bg-[#2B5EA9] text-white shadow-sm"
+                    : "border-[#D0D9E6] bg-[#F8FAFC] text-[#1E447C] hover:border-[#2B5EA9]/50"
+                  }`}
+              >
+                <Clock className="w-5 h-5 mb-1.5 text-[#EBA9B5]" />
+                <div>
+                  <span className="text-xs font-bold block">Ambil Sendiri</span>
+                  <span className={`text-[10px] block mt-0.5 ${orderType === "pickup" ? "text-gray-200" : "text-[#7C8B9E]"}`}>
+                    Di Stand Kampus
+                  </span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setOrderType("delivery")}
+                className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all ${orderType === "delivery"
+                    ? "border-[#2B5EA9] bg-[#2B5EA9] text-white shadow-sm"
+                    : "border-[#D0D9E6] bg-[#F8FAFC] text-[#1E447C] hover:border-[#2B5EA9]/50"
+                  }`}
+              >
+                <MapPin className="w-5 h-5 mb-1.5 text-[#EBA9B5]" />
+                <div>
+                  <span className="text-xs font-bold block">Diantar (Delivery)</span>
+                  <span className={`text-[10px] block mt-0.5 ${orderType === "delivery" ? "text-gray-200" : "text-[#7C8B9E]"}`}>
+                    Kelas / Lobby
+                  </span>
+                </div>
+              </button>
+            </div>
+
+            {orderType === "delivery" && (
+              <div>
+                <label className="block text-xs font-semibold text-[#67778E] mb-1">
+                  Detail Lokasi Antar *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Contoh: Gedung D3 R. 204 atau Kos Melati No. 4"
+                  value={deliveryLocation}
+                  onChange={(e) => setDeliveryLocation(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#D0D9E6] text-sm text-[#1E447C] focus:outline-none focus:ring-2 focus:ring-[#2B5EA9] bg-[#F8FAFC]"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-[#67778E] mb-1">
+                Catatan Pesanan (Opsional)
+              </label>
+              <input
+                type="text"
+                placeholder="Contoh: Saus dipisah, es sedikit, tidak pakai sendok"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-[#D0D9E6] text-sm text-[#1E447C] focus:outline-none focus:ring-2 focus:ring-[#2B5EA9] bg-[#F8FAFC]"
+              />
+            </div>
+          </div>
+
+          {/* Section 3: Payment Method */}
+          <div className="bg-white rounded-2xl p-4 border border-[#E2DDD0] space-y-3">
+            <h3 className="text-xs font-bold text-[#1E447C] uppercase tracking-wider">
+              3. Metode Pembayaran
+            </h3>
+
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("qris")}
+                className={`p-2.5 rounded-xl border text-center flex flex-col items-center justify-center transition-all ${paymentMethod === "qris"
+                    ? "border-[#2B5EA9] bg-[#2B5EA9] text-white shadow-sm"
+                    : "border-[#D0D9E6] bg-[#F8FAFC] text-[#1E447C]"
+                  }`}
+              >
+                <QrCode className="w-5 h-5 mb-1 text-[#EBA9B5]" />
+                <span className="text-xs font-bold">QRIS</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("transfer")}
+                className={`p-2.5 rounded-xl border text-center flex flex-col items-center justify-center transition-all ${paymentMethod === "transfer"
+                    ? "border-[#2B5EA9] bg-[#2B5EA9] text-white shadow-sm"
+                    : "border-[#D0D9E6] bg-[#F8FAFC] text-[#1E447C]"
+                  }`}
+              >
+                <CreditCard className="w-5 h-5 mb-1 text-[#4176C4]" />
+                <span className="text-xs font-bold">Transfer</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPaymentMethod("cash")}
+                className={`p-2.5 rounded-xl border text-center flex flex-col items-center justify-center transition-all ${paymentMethod === "cash"
+                    ? "border-[#2B5EA9] bg-[#2B5EA9] text-white shadow-sm"
+                    : "border-[#D0D9E6] bg-[#F8FAFC] text-[#1E447C]"
+                  }`}
+              >
+                <Banknote className="w-5 h-5 mb-1 text-[#10B981]" />
+                <span className="text-xs font-bold">Tunai / COD</span>
+              </button>
+            </div>
+
+            {/* QRIS Display */}
+            {paymentMethod === "qris" && (
+              <div className="mt-3 p-4 bg-[#F8F5EE] rounded-2xl border border-[#E2DDD0] flex flex-col items-center text-center">
+                <div className="bg-white p-2.5 rounded-2xl shadow-md border border-[#D0D9E6] max-w-[240px]">
+                  <div className="relative w-48 sm:w-52 h-64 sm:h-72 rounded-xl overflow-hidden shadow-inner bg-white">
+                    <Image
+                      src="/images/qris-nekofrost.jpg"
+                      alt="QRIS NekoFrost - NEKOFROST, MAKANAN & MINU"
+                      fill
+                      sizes="208px"
+                      className="object-contain"
+                      priority
+                    />
+                  </div>
+                </div>
+                <p className="text-xs font-bold text-[#1E447C] mt-2.5">
+                  NEKOFROST, MAKANAN &amp; MINU
+                </p>
+                <p className="text-[11px] text-[#67778E] mt-0.5">
+                  NMID: ID1026640476507 • Terima QRIS dari GoPay, BCA, Mandiri, BNI, BRI, OVO, Dana, dll.
+                </p>
+                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full mt-2">
+                  Total Bayar: {formattedTotal}
+                </span>
+              </div>
+            )}
+
+            {/* Transfer Bank & E-Wallet Display */}
+            {paymentMethod === "transfer" && (
+              <div className="mt-3 p-4 bg-[#F8F5EE] rounded-2xl border border-[#E2DDD0] space-y-2.5">
+                {/* GoPay / e-Wallet */}
+                <div className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-[#D0D9E6]">
+                  <div>
+                    <span className="text-[11px] text-[#7C8B9E] block font-medium">
+                      GoPay / e-Wallet
+                    </span>
+                    <span className="text-sm font-mono font-bold text-[#2B5EA9]">
+                      0813 8449 3122
+                    </span>
+                    <span className="text-[10px] text-[#7C8B9E] block">
+                      a.n. Raihan Ananta Maulana
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyAccount("081384493122")}
+                    className="p-2 rounded-lg bg-[#F1EDE1] text-[#2B5EA9] hover:bg-[#2B5EA9] hover:text-white transition-colors"
+                    title="Salin Nomor GoPay"
+                  >
+                    {copiedAccount ? (
+                      <Check className="w-4 h-4 text-emerald-600" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Upload Bukti Pembayaran */}
+            {paymentMethod !== "cash" && (
+              <div className="mt-2">
+                <label className="block text-xs font-semibold text-[#67778E] mb-1">
+                  Upload Bukti Pembayaran (Opsional)
+                </label>
+                <label className="flex items-center justify-center gap-2 p-3 border border-dashed border-[#B8C8DD] rounded-xl cursor-pointer hover:bg-white transition-colors bg-white/50">
+                  <UploadCloud className="w-4 h-4 text-[#7C8B9E]" />
+                  <span className="text-xs text-[#67778E] truncate max-w-xs">
+                    {proofFileName || "Pilih foto screenshot bukti transfer..."}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            )}
+          </div>
+
+          {/* Order Summary & Submit Button */}
+          <div className="pt-2">
+            <div className="bg-[#1E447C] text-white p-5 rounded-2xl shadow-lg">
+              <div className="flex items-center justify-between mb-3 text-xs text-[#C8DCF7]">
+                <span>Total Rincian ({cart.reduce((s, i) => s + i.quantity, 0)} porsi)</span>
+                <span className="text-sm font-bold text-white">{formattedTotal}</span>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-3.5 rounded-full bg-[#EBA9B5] text-[#1E447C] font-bold text-sm hover:bg-[#f2bcc5] transition-all flex items-center justify-center gap-2 shadow-md active:scale-95 disabled:opacity-50"
+              >
+                {isSubmitting ? (
+                  <span>Memproses Pesanan...</span>
+                ) : (
+                  <span>Selesaikan & Buat Pesanan</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
