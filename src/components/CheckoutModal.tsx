@@ -12,6 +12,7 @@ import {
   MapPin,
   Clock,
   UploadCloud,
+  AlertCircle,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
@@ -57,6 +58,10 @@ export default function CheckoutModal() {
     }
     if (orderType === "delivery" && !deliveryLocation.trim()) {
       alert("Mohon cantumkan lokasi pengantaran (Kelas/Lantai/Lobby).");
+      return;
+    }
+    if (paymentMethod !== "cash" && !proofFileName) {
+      alert("PENTING: Wajib lampirkan foto bukti pembayaran transfer / QRIS terlebih dahulu sebelum membuat pesanan!");
       return;
     }
 
@@ -322,17 +327,47 @@ export default function CheckoutModal() {
               </div>
             )}
 
-            {/* Upload Bukti Pembayaran */}
+            {/* Upload Bukti Pembayaran (WAJIB untuk QRIS & Transfer) */}
             {paymentMethod !== "cash" && (
-              <div className="mt-2">
-                <label className="block text-xs font-semibold text-[#67778E] mb-1">
-                  Upload Bukti Pembayaran (Opsional)
-                </label>
-                <label className="flex items-center justify-center gap-2 p-3 border border-dashed border-[#B8C8DD] rounded-xl cursor-pointer hover:bg-white transition-colors bg-white/50">
-                  <UploadCloud className="w-4 h-4 text-[#7C8B9E]" />
-                  <span className="text-xs text-[#67778E] truncate max-w-xs">
-                    {proofFileName || "Pilih foto screenshot bukti transfer..."}
+              <div className="mt-3 p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#D0D9E6] space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-[#1E447C] flex items-center gap-1">
+                    <span>Upload Bukti Pembayaran</span>
+                    <span className="text-rose-500">*</span>
+                  </label>
+                  <span
+                    className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
+                      proofFileName
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                        : "bg-rose-50 text-rose-600 border-rose-300 animate-pulse"
+                    }`}
+                  >
+                    {proofFileName ? "Foto Terlampir" : "Wajib Diunggah *"}
                   </span>
+                </div>
+
+                <label
+                  className={`flex items-center justify-center gap-2.5 p-3.5 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                    proofFileName
+                      ? "border-emerald-400 bg-emerald-50/50 text-emerald-800"
+                      : "border-rose-300 bg-white hover:bg-rose-50/30 text-[#67778E]"
+                  }`}
+                >
+                  {proofFileName ? (
+                    <Check className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                  ) : (
+                    <UploadCloud className="w-5 h-5 text-rose-500 flex-shrink-0" />
+                  )}
+                  <div className="text-left overflow-hidden">
+                    <span className="text-xs font-semibold block truncate max-w-[240px]">
+                      {proofFileName || "Pilih screenshot bukti transfer / QRIS..."}
+                    </span>
+                    <span className="text-[10px] text-[#8C9BAE] block">
+                      {proofFileName
+                        ? "Klik untuk mengganti foto bukti"
+                        : "Wajib lampirkan bukti pembayaran yang sah"}
+                    </span>
+                  </div>
                   <input
                     type="file"
                     accept="image/*"
@@ -352,15 +387,29 @@ export default function CheckoutModal() {
                 <span className="text-sm font-bold text-white">{formattedTotal}</span>
               </div>
 
+              {/* Warning if cashless but proof is missing */}
+              {paymentMethod !== "cash" && !proofFileName && (
+                <div className="mb-3 p-2.5 rounded-xl bg-rose-500/20 border border-rose-400/30 text-rose-200 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-[#EBA9B5] flex-shrink-0" />
+                  <span className="text-[11px] font-medium leading-tight">
+                    Wajib upload bukti pembayaran QRIS/Transfer di atas untuk melanjutkan pesanan.
+                  </span>
+                </div>
+              )}
+
               <button
                 type="submit"
-                disabled={isSubmitting}
-                className="w-full py-3.5 rounded-full bg-[#EBA9B5] text-[#1E447C] font-bold text-sm hover:bg-[#f2bcc5] transition-all flex items-center justify-center gap-2 shadow-md active:scale-95 disabled:opacity-50"
+                disabled={isSubmitting || (paymentMethod !== "cash" && !proofFileName)}
+                className={`w-full py-3.5 rounded-full font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-md active:scale-95 ${
+                  paymentMethod !== "cash" && !proofFileName
+                    ? "bg-[#617B9F] text-[#D8E6F8] cursor-not-allowed opacity-60"
+                    : "bg-[#EBA9B5] text-[#1E447C] hover:bg-[#f2bcc5]"
+                }`}
               >
                 {isSubmitting ? (
                   <span>Memproses Pesanan...</span>
                 ) : (
-                  <span>Selesaikan & Buat Pesanan</span>
+                  <span>Selesaikan &amp; Buat Pesanan</span>
                 )}
               </button>
             </div>
