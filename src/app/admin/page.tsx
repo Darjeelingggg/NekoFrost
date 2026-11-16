@@ -16,9 +16,12 @@ import {
   Lock,
   Plus,
   Trash2,
+  RotateCw,
+  Database,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { OrderStatus, Product } from "@/types";
+import { isSupabaseConfigured } from "@/lib/supabase";
 
 export default function AdminPage() {
   const {
@@ -30,11 +33,13 @@ export default function AdminPage() {
     toggleProductAvailability,
     updateProduct,
     addProduct,
+    refreshOrders,
   } = useApp();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [pinInput, setPinInput] = useState("");
   const [pinError, setPinError] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState<"orders" | "products">("orders");
@@ -244,6 +249,33 @@ export default function AdminPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Supabase Cloud Sync Status Badge */}
+            <div className="hidden md:flex items-center">
+              {isSupabaseConfigured ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-200 border border-emerald-400/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Cloud: Supabase Live
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-200 border border-amber-400/30">
+                  Mode: Local
+                </span>
+              )}
+            </div>
+
+            {/* Manual Refresh Button */}
+            <button
+              onClick={async () => {
+                setIsRefreshing(true);
+                await refreshOrders();
+                setTimeout(() => setIsRefreshing(false), 500);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#1E447C] text-[#D8E6F8] hover:text-white transition-all border border-[#3E6FB2]"
+              title="Refresh Data Pesanan"
+            >
+              <RotateCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#EBA9B5]" : ""}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
             {orders.length > 0 && (
               <button
                 onClick={() => {

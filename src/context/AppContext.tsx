@@ -3,6 +3,13 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Product, CartItem, Order, OrderStatus, ProductCategory } from "@/types";
 import { initialProducts } from "@/data/products";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import {
+  fetchCloudOrders,
+  insertCloudOrder,
+  updateCloudOrderStatus,
+  deleteCloudOrder,
+} from "@/lib/orderService";
 
 interface AppContextType {
   products: Product[];
@@ -35,6 +42,7 @@ interface AppContextType {
 
   // Orders (Admin + Tracking)
   orders: Order[];
+  refreshOrders: () => Promise<void>;
   createOrder: (orderData: Omit<Order, "id" | "createdAt" | "status">) => Order;
   updateOrderStatus: (orderId: string, status: OrderStatus) => void;
   deleteOrder: (orderId: string) => void;
@@ -101,6 +109,40 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoaded(true);
     }
+  }, []);
+
+  // Sync Cloud Orders from Supabase & Listen to Realtime Updates
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
+
+    let isMounted = true;
+    const syncOrders = async () => {
+      const cloudOrders = await fetchCloudOrders();
+      if (isMounted && cloudOrders.length > 0) {
+        setOrders(cloudOrders);
+      }
+    };
+
+    syncOrders();
+
+    const channel = supabase
+      .channel("public-orders-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders" },
+        async () => {
+          const updated = await fetchCloudOrders();
+          if (isMounted) {
+            setOrders(updated);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      supabase?.removeChannel(channel);
+    };
   }, []);
 
   // Save changes to localStorage
@@ -209,6 +251,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  const refreshOrders = async () => {
+    if (isSupabaseConfigured) {
+      const cloudOrders = await fetchCloudOrders();
+      if (cloudOrders.length > 0) {
+        setOrders(cloudOrders);
+      }
+    }
+  };
+
   const createOrder = (orderData: Omit<Order, "id" | "createdAt" | "status">): Order => {
     const randomNum = Math.floor(1000 + Math.random() * 9000);
     const newOrder: Order = {
@@ -221,6 +272,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setOrders((prev) => [newOrder, ...prev]);
     setLatestOrder(newOrder);
     clearCart();
+
+    // Push to Supabase Cloud if configured
+    if (isSupabaseConfigured) {
+      insertCloudOrder(newOrder);
+    }
+
     return newOrder;
   };
 
@@ -228,10 +285,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setOrders((prev) =>
       prev.map((ord) => (ord.id === orderId ? { ...ord, status } : ord))
     );
+    if (isSupabaseConfigured) {
+      updateCloudOrderStatus(orderId, status);
+    }
   };
 
   const deleteOrder = (orderId: string) => {
     setOrders((prev) => prev.filter((ord) => ord.id !== orderId));
+    if (isSupabaseConfigured) {
+      deleteCloudOrder(orderId);
+    }
   };
 
   const clearOrders = () => {
@@ -288,6 +351,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         activeSubCategory,
         setActiveSubCategory,
         orders,
+        refreshOrders,
         createOrder,
         updateOrderStatus,
         deleteOrder,
