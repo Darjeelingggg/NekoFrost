@@ -101,7 +101,7 @@ export default function SignatureSpotlight() {
             <div className="absolute inset-2 rounded-full border border-dashed border-[#2B5EA9]/25 pointer-events-none" />
             {/* Inner plate rim */}
             <div className="absolute inset-4 rounded-full border border-[#DED7C8]/70 pointer-events-none" />
-            
+
             {/* Soft subtle glow behind item */}
             <div className="absolute w-40 h-40 rounded-full bg-[#2B5EA9]/10 blur-xl pointer-events-none" />
 
@@ -134,7 +134,7 @@ export default function SignatureSpotlight() {
             <div className="absolute inset-2 rounded-full border border-dashed border-[#2B5EA9]/25 pointer-events-none" />
             {/* Inner plate rim */}
             <div className="absolute inset-4 rounded-full border border-[#E8DFCC]/70 pointer-events-none" />
-            
+
             {/* Soft citrus glow behind cup */}
             <div className="absolute w-40 h-40 rounded-full bg-amber-400/15 blur-xl pointer-events-none" />
 
@@ -169,14 +169,14 @@ export default function SignatureSpotlight() {
           </div>
 
           <p className="text-xs sm:text-sm text-[#4E5D71] leading-relaxed">
-            Sprite, lemon, madu &amp; es: manis-asam segar dengan sensasi soda dingin. Penyeimbang paling pas dan segar maksimal setelah menikmati chichick krispi yang gurih.
+            Sprite, lemon, &amp; es: manis-asam segar dengan sensasi soda dingin. Penyeimbang paling pas dan segar maksimal setelah menikmati chichick krispi yang gurih.
           </p>
 
           {/* Feature Highlights */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-[#2A3B52]">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />
-              <span className="font-medium">Sprite, Lemon &amp; Madu</span>
+              <span className="font-medium">Sprite, Lemon &amp; </span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-amber-500 flex-shrink-0" />

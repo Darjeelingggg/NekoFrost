@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "NekoFrost - Crispy Chicken, Yuzu Drinks & Fries",
-  description: "Website resmi pemesanan NekoFrost. Pesan Boneless Chicken, Minuman Yuzu Nipis Madu, dan Crispy French Fries.",
+  description: "Website resmi pemesanan NekoFrost. Pesan Boneless Chicken, Minuman Yuzu Nipis, dan Crispy French Fries.",
   icons: {
     icon: [
       { url: "/images/logo.png" },
