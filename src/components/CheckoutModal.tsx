@@ -263,7 +263,7 @@ export default function CheckoutModal() {
                 <input
                   type="text"
                   required
-                  placeholder="Contoh: Gedung D3 R. 204 atau Kos Melati No. 4"
+                  placeholder="Contoh: Kelas 04.002"
                   value={deliveryLocation}
                   onChange={(e) => setDeliveryLocation(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-[#D0D9E6] text-sm text-[#1E447C] focus:outline-none focus:ring-2 focus:ring-[#2B5EA9] bg-[#F8FAFC]"
@@ -476,8 +476,8 @@ export default function CheckoutModal() {
                 type="submit"
                 disabled={isSubmitting || (paymentMethod !== "cash" && !proofDataUrl)}
                 className={`w-full py-3.5 rounded-full font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-md active:scale-95 ${paymentMethod !== "cash" && !proofDataUrl
-                    ? "bg-[#617B9F] text-[#D8E6F8] cursor-not-allowed opacity-60"
-                    : "bg-[#EBA9B5] text-[#1E447C] hover:bg-[#f2bcc5]"
+                  ? "bg-[#617B9F] text-[#D8E6F8] cursor-not-allowed opacity-60"
+                  : "bg-[#EBA9B5] text-[#1E447C] hover:bg-[#f2bcc5]"
                   }`}
               >
                 {isSubmitting ? (
