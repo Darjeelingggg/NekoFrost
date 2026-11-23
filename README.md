@@ -20,7 +20,7 @@ Website sistem informasi penjualan makanan berbasis **Next.js (App Router)** dan
   * Total kalkulasi otomatis.
 * **Form Checkout Lengkap**:
   * Input Nama dan No. WhatsApp pemesan.
-  * Pilihan metode: **Ambil di Stand Kampus (Pickup)** atau **Diantar (Delivery)** ke kelas.
+  * Pilihan metode: **Ambil di Lobby (Pickup)** atau **Diantar (Delivery)** ke kelas.
   * Pilihan pembayaran: **QRIS**, **Transfer Bank**, atau **Tunai / COD**.
   * Preview QR Code & tombol salin nomor rekening.
 * **Konfirmasi WhatsApp Otomatis**:

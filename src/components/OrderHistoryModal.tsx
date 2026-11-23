@@ -23,7 +23,7 @@ export default function OrderHistoryModal() {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-fadeIn">
       {/* Container inspired by Screen 3 ("Mes Commandes") */}
       <div className="relative w-full max-w-md max-h-[90vh] bg-[#F1EDE1] rounded-3xl shadow-2xl overflow-y-auto no-scrollbar border border-[#E2DDD0] flex flex-col justify-between">
-        
+
         {/* Top Header */}
         <div className="sticky top-0 z-10 px-5 py-4 bg-[#F1EDE1]/95 backdrop-blur-sm border-b border-[#E2DDD0] flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -116,7 +116,7 @@ export default function OrderHistoryModal() {
                       <span className="truncate">
                         {order.orderType === "delivery"
                           ? order.deliveryLocation || "Diantar"
-                          : "Ambil di Stand Kampus"}
+                          : "Ambil di Lobby"}
                       </span>
                     </div>
 
