@@ -17,7 +17,7 @@ import BrandPatterns from "@/components/BrandPatterns";
 import LoadingScreen from "@/components/LoadingScreen";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { useApp } from "@/context/AppContext";
-import { Search, ShoppingBag, Sparkles, ArrowRight, Plus, X, Flame, ShieldCheck, Heart } from "lucide-react";
+import { Search, ShoppingBag, Sparkles, ArrowRight, Plus, X, Flame, ShieldCheck, Heart, QrCode, MapPin, CheckCircle2, ChevronRight } from "lucide-react";
 import { Product } from "@/types";
 
 export default function HomePage() {
@@ -191,7 +191,7 @@ export default function HomePage() {
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 pt-1">
                     {bundleProducts.map((bundle) => {
                       const formattedBundlePrice = new Intl.NumberFormat("id-ID", {
                         style: "currency",
@@ -279,6 +279,71 @@ export default function HomePage() {
                   {singleProducts.map((product) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
+                </div>
+              </section>
+
+              {/* SECTION 3: PANDUAN CARA PESAN */}
+              <section className="bg-white rounded-3xl p-5 sm:p-7 border border-[#E2DDD0] shadow-sm relative overflow-hidden">
+                <div className="text-center max-w-lg mx-auto mb-6">
+                  <span className="text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full bg-[#EAF2FD] text-[#1E447C] inline-block mb-1.5">
+                    Mudah &amp; Praktis
+                  </span>
+                  <h2 className="text-lg sm:text-xl font-serif font-black text-[#1E447C] tracking-tight">
+                    Langkah-Langkah Pemesanan
+                  </h2>
+                  <p className="text-xs text-[#67778E] mt-1">
+                    Hanya 4 langkah mudah untuk menikmati hidangan hangat &amp; renyah NekoFrost di kelasmu!
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Step 1 */}
+                  <div className="p-4 rounded-2xl bg-[#F8F6F0] border border-[#EBE6D8] flex flex-col items-center text-center relative group hover:border-[#2B5EA9] transition-colors">
+                    <div className="w-12 h-12 rounded-2xl bg-[#1E447C] text-white flex items-center justify-center font-black text-sm mb-3 shadow-sm group-hover:scale-105 transition-transform">
+                      <ShoppingBag className="w-6 h-6 text-[#EBA9B5]" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase text-[#2B5EA9] tracking-wider mb-0.5">Langkah 1</span>
+                    <h3 className="text-xs sm:text-sm font-bold text-[#1E447C]">Pilih Menu Favorit</h3>
+                    <p className="text-[11px] text-[#67778E] mt-1 leading-relaxed">
+                      Pilih menu satuan atau paket bundling hemat, tentukan jumlahnya, lalu klik &quot;+ Pesan&quot;.
+                    </p>
+                  </div>
+
+                  {/* Step 2 */}
+                  <div className="p-4 rounded-2xl bg-[#F8F6F0] border border-[#EBE6D8] flex flex-col items-center text-center relative group hover:border-[#2B5EA9] transition-colors">
+                    <div className="w-12 h-12 rounded-2xl bg-[#1E447C] text-white flex items-center justify-center font-black text-sm mb-3 shadow-sm group-hover:scale-105 transition-transform">
+                      <MapPin className="w-6 h-6 text-[#EBA9B5]" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase text-[#2B5EA9] tracking-wider mb-0.5">Langkah 2</span>
+                    <h3 className="text-xs sm:text-sm font-bold text-[#1E447C]">Isi Data &amp; Lokasi</h3>
+                    <p className="text-[11px] text-[#67778E] mt-1 leading-relaxed">
+                      Isi nama lengkap, nomor WhatsApp, serta gedung dan ruang kelas tujuan pengantaran.
+                    </p>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="p-4 rounded-2xl bg-[#F8F6F0] border border-[#EBE6D8] flex flex-col items-center text-center relative group hover:border-[#2B5EA9] transition-colors">
+                    <div className="w-12 h-12 rounded-2xl bg-[#1E447C] text-white flex items-center justify-center font-black text-sm mb-3 shadow-sm group-hover:scale-105 transition-transform">
+                      <QrCode className="w-6 h-6 text-[#EBA9B5]" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase text-[#2B5EA9] tracking-wider mb-0.5">Langkah 3</span>
+                    <h3 className="text-xs sm:text-sm font-bold text-[#1E447C]">Bayar &amp; Upload Bukti</h3>
+                    <p className="text-[11px] text-[#67778E] mt-1 leading-relaxed">
+                      Scan QRIS GoPay Merchant atau Transfer Bank, lalu lampirkan screenshot bukti transfer.
+                    </p>
+                  </div>
+
+                  {/* Step 4 */}
+                  <div className="p-4 rounded-2xl bg-[#F8F6F0] border border-[#EBE6D8] flex flex-col items-center text-center relative group hover:border-[#2B5EA9] transition-colors">
+                    <div className="w-12 h-12 rounded-2xl bg-[#1E447C] text-white flex items-center justify-center font-black text-sm mb-3 shadow-sm group-hover:scale-105 transition-transform">
+                      <CheckCircle2 className="w-6 h-6 text-[#EBA9B5]" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase text-[#2B5EA9] tracking-wider mb-0.5">Langkah 4</span>
+                    <h3 className="text-xs sm:text-sm font-bold text-[#1E447C]">Pesanan Diantar</h3>
+                    <p className="text-[11px] text-[#67778E] mt-1 leading-relaxed">
+                      Duduk santai di kelas! Makanan dimasak fresh hangat dan segera diantar tepat waktu.
+                    </p>
+                  </div>
                 </div>
               </section>
             </div>
