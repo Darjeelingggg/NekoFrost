@@ -60,7 +60,7 @@ export const initialProducts: Product[] = [
     calories: "520 kcal",
     likes: 380,
     available: true,
-    image: "/images/risol-coklat-keju.jpg",
+    image: "/images/paket-risol.jpg",
   },
 
   // --- MENU SATUAN: BONELESS CHICHICK ---

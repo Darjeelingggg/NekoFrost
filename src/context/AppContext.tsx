@@ -60,7 +60,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_PRODUCTS = "kwu_products_v14";
+const LOCAL_STORAGE_PRODUCTS = "kwu_products_v15";
 const LOCAL_STORAGE_CART = "kwu_cart_v3";
 const LOCAL_STORAGE_ORDERS = "kwu_orders_v4";
 const LOCAL_STORAGE_LIKES = "kwu_likes_v1";
