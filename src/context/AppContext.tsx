@@ -55,6 +55,9 @@ interface AppContextType {
   getProductStock: (productId: string) => number;
   getProductOrderedQty: (productId: string) => number;
   isProductAvailable: (productId: string) => boolean;
+  validateCartAgainstStock: (
+    itemsToCheck: { productId: string; quantity: number }[]
+  ) => { valid: boolean; errorItem?: string; remaining?: number };
 
   // Interactivity: Toast & Likes
   toastMessage: string | null;
@@ -65,10 +68,36 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_PRODUCTS = "kwu_products_v17";
+const LOCAL_STORAGE_PRODUCTS = "kwu_products_v18";
 const LOCAL_STORAGE_CART = "kwu_cart_v3";
 const LOCAL_STORAGE_ORDERS = "kwu_orders_v4";
 const LOCAL_STORAGE_LIKES = "kwu_likes_v1";
+
+// Mapping resep/komponen untuk setiap menu Paket (Bundling)
+export const BUNDLE_RECIPES: Record<string, { productId: string; qty: number }[]> = {
+  // Paket Komplit: 1x Ayam Ori + 1x Kentang Keju + 1x Yuzu
+  "pkt-komplit": [
+    { productId: "chk-ori", qty: 1 },
+    { productId: "ktg-keju", qty: 1 },
+    { productId: "yuzu-ori", qty: 1 },
+  ],
+  // Paket Hemat: 1x Ayam Ori + 1x Yuzu
+  "pkt-hemat": [
+    { productId: "chk-ori", qty: 1 },
+    { productId: "yuzu-ori", qty: 1 },
+  ],
+  // Paket Snack: 1x Kentang Keju + 1x Yuzu
+  "pkt-snack": [
+    { productId: "ktg-keju", qty: 1 },
+    { productId: "yuzu-ori", qty: 1 },
+  ],
+  // Paket 3 Risol: 1x Risol Coklat + 1x Risol Strawberry + 1x Risol Matcha
+  "pkt-risol": [
+    { productId: "rsl-coklat-keju", qty: 1 },
+    { productId: "rsl-strawberry-keju", qty: 1 },
+    { productId: "rsl-matcha", qty: 1 },
+  ],
+};
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -234,21 +263,71 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  // Realtime Stock & Order Count Helpers
+  // Realtime Stock & Order Count Helpers (Multi-Product & Bundle Interdependency)
   const getProductOrderedQty = (productId: string): number => {
-    return orders
+    // 1. Hitung pesanan langsung produk ini
+    const directQty = orders
       .filter((o) => o.status !== "cancelled")
       .reduce((sum, o) => {
         const item = o.items.find((i) => i.productId === productId);
         return sum + (item ? item.quantity : 0);
       }, 0);
+
+    // 2. Jika produk ini adalah bagian dari paket bundling manapun,
+    // tambahkan jumlah yang terjual via paket bundling tersebut!
+    let fromBundlesQty = 0;
+    orders
+      .filter((o) => o.status !== "cancelled")
+      .forEach((o) => {
+        o.items.forEach((item) => {
+          const recipe = BUNDLE_RECIPES[item.productId];
+          if (recipe) {
+            const component = recipe.find((c) => c.productId === productId);
+            if (component) {
+              fromBundlesQty += item.quantity * component.qty;
+            }
+          }
+        });
+      });
+
+    return directQty + fromBundlesQty;
   };
 
   const getProductStock = (productId: string): number => {
     const prod = products.find((p) => p.id === productId);
     const baseStock = typeof prod?.stock === "number" ? prod.stock : 5;
-    const ordered = getProductOrderedQty(productId);
-    return Math.max(0, baseStock - ordered);
+
+    // A. JIKA PRODUK INI ADALAH PAKET (BUNDLING):
+    // Stoknya dibatasi oleh komponen satuan di dalamnya AND kuota paket itu sendiri
+    const recipe = BUNDLE_RECIPES[productId];
+    if (recipe) {
+      // Hitung berapa paket yang masih bisa dibuat dari sisa stok masing-masing komponen
+      const maxFromComponents = Math.min(
+        ...recipe.map((comp) => {
+          const compProd = products.find((p) => p.id === comp.productId);
+          const compBaseStock = typeof compProd?.stock === "number" ? compProd.stock : 5;
+          const compOrdered = getProductOrderedQty(comp.productId);
+          const compRemaining = Math.max(0, compBaseStock - compOrdered);
+          return Math.floor(compRemaining / comp.qty);
+        })
+      );
+
+      // Hitung pesanan langsung dari paket ini
+      const directOrders = orders
+        .filter((o) => o.status !== "cancelled")
+        .reduce((sum, o) => {
+          const item = o.items.find((i) => i.productId === productId);
+          return sum + (item ? item.quantity : 0);
+        }, 0);
+      const remainingBundleQuota = Math.max(0, baseStock - directOrders);
+
+      return Math.max(0, Math.min(remainingBundleQuota, maxFromComponents));
+    }
+
+    // B. JIKA PRODUK INI ADALAH MENU SATUAN:
+    // Sisa = Kuota Awal - Total Dipesan (baik langsung maupun via paket bundling)
+    const totalOrdered = getProductOrderedQty(productId);
+    return Math.max(0, baseStock - totalOrdered);
   };
 
   const isProductAvailable = (productId: string): boolean => {
@@ -257,36 +336,70 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return getProductStock(productId) > 0;
   };
 
-  const addToCart = (product: Product, quantity = 1, notes = "") => {
-    const remaining = getProductStock(product.id);
-    const existing = cart.find((item) => item.product.id === product.id);
-    const currentInCart = existing ? existing.quantity : 0;
-    const totalRequested = currentInCart + quantity;
-
-    if (remaining <= 0) {
-      showToast(`Maaf, ${product.name} sudah habis terjual!`);
-      return;
-    }
-
-    if (totalRequested > remaining) {
-      if (currentInCart > 0) {
-        showToast(`Maaf, stok tersisa ${remaining} porsi (${currentInCart} sudah ada di keranjang).`);
-      } else {
-        showToast(`Maaf, stok ${product.name} hanya tersisa ${remaining} porsi.`);
+  // Validasi seluruh keranjang terhadap kombinasi stok satuan & paket
+  const validateCartAgainstStock = (
+    itemsToCheck: { productId: string; quantity: number }[]
+  ): { valid: boolean; errorItem?: string; remaining?: number } => {
+    // 1. Cek langsung setiap produk di keranjang
+    for (const item of itemsToCheck) {
+      const remaining = getProductStock(item.productId);
+      if (item.quantity > remaining) {
+        const prod = products.find((p) => p.id === item.productId);
+        return { valid: false, errorItem: prod?.name || item.productId, remaining };
       }
-      return;
     }
 
-    setCart((prev) => {
-      if (existing) {
-        return prev.map((item) =>
+    // 2. Cek total kebutuhan bahan/satuan dari kombinasi menu satuan + paket di keranjang
+    for (const prod of products) {
+      let totalDemand = 0;
+      for (const item of itemsToCheck) {
+        if (item.productId === prod.id) {
+          totalDemand += item.quantity;
+        }
+        const recipe = BUNDLE_RECIPES[item.productId];
+        if (recipe) {
+          const comp = recipe.find((c) => c.productId === prod.id);
+          if (comp) {
+            totalDemand += item.quantity * comp.qty;
+          }
+        }
+      }
+
+      if (totalDemand > 0) {
+        const baseStock = typeof prod.stock === "number" ? prod.stock : 5;
+        const alreadyOrdered = getProductOrderedQty(prod.id);
+        const availableStock = Math.max(0, baseStock - alreadyOrdered);
+        if (totalDemand > availableStock) {
+          return { valid: false, errorItem: prod.name, remaining: availableStock };
+        }
+      }
+    }
+
+    return { valid: true };
+  };
+
+  const addToCart = (product: Product, quantity = 1, notes = "") => {
+    const existing = cart.find((item) => item.product.id === product.id);
+    const candidateCart = existing
+      ? cart.map((item) =>
           item.product.id === product.id
             ? { ...item, quantity: item.quantity + quantity, notes: notes || item.notes }
             : item
-        );
-      }
-      return [...prev, { product, quantity, notes }];
-    });
+        )
+      : [...cart, { product, quantity, notes }];
+
+    const validation = validateCartAgainstStock(
+      candidateCart.map((i) => ({ productId: i.product.id, quantity: i.quantity }))
+    );
+
+    if (!validation.valid) {
+      showToast(
+        `Maaf, stok ${validation.errorItem} tidak mencukupi (sisa ${validation.remaining ?? 0} porsi).`
+      );
+      return;
+    }
+
+    setCart(candidateCart);
     showToast(`${quantity}x ${product.name} dimasukkan ke keranjang!`);
   };
 
@@ -299,16 +412,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       removeFromCart(productId);
       return;
     }
-    const remaining = getProductStock(productId);
-    if (quantity > remaining) {
-      showToast(`Maksimal hanya ${remaining} porsi sesuai stok yang tersedia.`);
+
+    const candidateCart = cart.map((item) =>
+      item.product.id === productId ? { ...item, quantity } : item
+    );
+
+    const validation = validateCartAgainstStock(
+      candidateCart.map((i) => ({ productId: i.product.id, quantity: i.quantity }))
+    );
+
+    if (!validation.valid) {
+      showToast(
+        `Maksimal hanya ${validation.remaining ?? 0} porsi sesuai sisa stok ${validation.errorItem}.`
+      );
       return;
     }
-    setCart((prev) =>
-      prev.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item
-      )
-    );
+
+    setCart(candidateCart);
   };
 
   const clearCart = () => setCart([]);
@@ -330,14 +450,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const createOrder = (orderData: Omit<Order, "id" | "createdAt" | "status">): Order => {
-    // Re-verify stock for each ordered item before accepting order
-    for (const item of orderData.items) {
-      const remaining = getProductStock(item.productId);
-      if (item.quantity > remaining) {
-        const errorMsg = `Maaf, stok untuk ${item.productName} hanya tersisa ${remaining} porsi!`;
-        showToast(errorMsg);
-        throw new Error(errorMsg);
-      }
+    // Re-verify kombinasi keranjang terhadap stok real-time sebelum order dibuat
+    const validation = validateCartAgainstStock(
+      orderData.items.map((i) => ({ productId: i.productId, quantity: i.quantity }))
+    );
+
+    if (!validation.valid) {
+      const errorMsg = `Maaf, stok untuk ${validation.errorItem} tidak mencukupi (hanya tersisa ${validation.remaining ?? 0} porsi)!`;
+      showToast(errorMsg);
+      throw new Error(errorMsg);
     }
 
     const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -441,6 +562,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         getProductStock,
         getProductOrderedQty,
         isProductAvailable,
+        validateCartAgainstStock,
         toastMessage,
         showToast,
         likedProductIds,

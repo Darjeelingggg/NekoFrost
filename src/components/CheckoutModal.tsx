@@ -17,7 +17,7 @@ import {
 import { useApp } from "@/context/AppContext";
 
 export default function CheckoutModal() {
-  const { isCheckoutOpen, setIsCheckoutOpen, cart, cartTotal, createOrder, getProductStock } =
+  const { isCheckoutOpen, setIsCheckoutOpen, cart, cartTotal, createOrder, getProductStock, validateCartAgainstStock } =
     useApp();
 
   const [customerName, setCustomerName] = useState("");
@@ -126,17 +126,16 @@ export default function CheckoutModal() {
       return;
     }
 
-    // Realtime stock re-verification before submitting order
-    for (const item of cart) {
-      const remaining = getProductStock(item.product.id);
-      if (item.quantity > remaining) {
-        if (remaining <= 0) {
-          alert(`Maaf, menu "${item.product.name}" baru saja habis! Silakan hapus menu ini dari keranjang.`);
-        } else {
-          alert(`Maaf, sisa stok untuk "${item.product.name}" hanya tinggal ${remaining} porsi. Silakan sesuaikan jumlah di keranjang.`);
-        }
-        return;
-      }
+    // Realtime stock re-verification before submitting order (single items & bundles)
+    const validation = validateCartAgainstStock(
+      cart.map((i) => ({ productId: i.product.id, quantity: i.quantity }))
+    );
+
+    if (!validation.valid) {
+      alert(
+        `Maaf, stok untuk menu "${validation.errorItem}" tidak mencukupi (sisa ${validation.remaining ?? 0} porsi). Silakan sesuaikan keranjangmu.`
+      );
+      return;
     }
 
     setIsSubmitting(true);
@@ -245,7 +244,7 @@ export default function CheckoutModal() {
                 <div>
                   <span className="text-xs font-bold block">Ambil Sendiri</span>
                   <span className={`text-[10px] block mt-0.5 ${orderType === "pickup" ? "text-gray-200" : "text-[#7C8B9E]"}`}>
-                    Di Lobby
+                    Di Stand NekoFrost
                   </span>
                 </div>
               </button>
@@ -262,7 +261,7 @@ export default function CheckoutModal() {
                 <div>
                   <span className="text-xs font-bold block">Diantar (Delivery)</span>
                   <span className={`text-[10px] block mt-0.5 ${orderType === "delivery" ? "text-gray-200" : "text-[#7C8B9E]"}`}>
-                    Kelas / Lobby
+                    Antar ke Ruang Kelas
                   </span>
                 </div>
               </button>

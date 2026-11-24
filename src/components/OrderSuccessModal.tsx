@@ -26,12 +26,24 @@ export default function OrderSuccessModal() {
     .map((item) => `- ${item.productName} (${item.quantity}x) = Rp ${(item.price * item.quantity).toLocaleString("id-ID")}`)
     .join("\n");
 
+  const deliveryMethodText =
+    latestOrder.orderType === "delivery"
+      ? `Diantar ke ${latestOrder.deliveryLocation || "Kelas"}`
+      : "Ambil Sendiri di Stand";
+
+  const paymentMethodText =
+    latestOrder.paymentMethod === "qris"
+      ? "QRIS"
+      : latestOrder.paymentMethod === "transfer"
+      ? "Transfer Bank"
+      : "Tunai / COD";
+
   const messageText = `Halo NekoFrost! Saya mau konfirmasi pesanan:
 Kode Pesanan: *#${latestOrder.id}*
 Nama: *${latestOrder.customerName}*
 No. WA: *${latestOrder.customerPhone}*
-Metode: *${latestOrder.orderType === "delivery" ? `Diantar ke: ${latestOrder.deliveryLocation}` : "Ambil di Stand"}*
-Pembayaran: *${latestOrder.paymentMethod.toUpperCase()}*
+Metode Pengambilan: *${deliveryMethodText}*
+Metode Pembayaran: *${paymentMethodText}*
 
 *Daftar Pesanan:*
 ${waItemsText}
@@ -89,15 +101,15 @@ Mohon segera diproses ya kak, terima kasih!`;
               <span className="font-semibold text-[#1E447C]">{latestOrder.customerName}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#7C8B9E]">Pengambilan:</span>
+              <span className="text-[#7C8B9E]">Metode Pengambilan:</span>
               <span className="font-semibold text-[#1E447C]">
-                {latestOrder.orderType === "delivery" ? latestOrder.deliveryLocation : "Ambil di Stand"}
+                {deliveryMethodText}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-[#7C8B9E]">Pembayaran:</span>
-              <span className="font-semibold text-[#2B5EA9] uppercase">
-                {latestOrder.paymentMethod}
+              <span className="text-[#7C8B9E]">Metode Pembayaran:</span>
+              <span className="font-semibold text-[#2B5EA9]">
+                {paymentMethodText}
               </span>
             </div>
             <div className="flex justify-between pt-1 border-t border-[#EAE5D8] text-sm font-bold text-[#1E447C]">

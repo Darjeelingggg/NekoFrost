@@ -15,6 +15,7 @@ export default function CartDrawer() {
     cartTotal,
     setIsCheckoutOpen,
     getProductStock,
+    validateCartAgainstStock,
   } = useApp();
 
   const [mounted, setMounted] = useState(false);
@@ -210,7 +211,10 @@ export default function CartDrawer() {
 
         {/* Drawer Footer with animated checkout CTA */}
         {cart.length > 0 && (() => {
-          const hasExceededItems = cart.some((i) => i.quantity > getProductStock(i.product.id));
+          const validation = validateCartAgainstStock(
+            cart.map((i) => ({ productId: i.product.id, quantity: i.quantity }))
+          );
+          const hasExceededItems = !validation.valid;
 
           return (
             <div className="p-5 border-t border-[#E2DDD0] bg-white rounded-t-3xl shadow-[0_-10px_20px_-5px_rgba(43,94,169,0.06)]">
@@ -224,8 +228,8 @@ export default function CartDrawer() {
               </div>
 
               {hasExceededItems && (
-                <p className="text-xs text-rose-600 font-bold mb-3 text-center">
-                  Beberapa menu melebihi sisa stok. Silakan kurangi porsi.
+                <p className="text-xs text-rose-600 font-bold mb-3 text-center leading-snug">
+                  Stok untuk {validation.errorItem} tidak mencukupi (sisa {validation.remaining ?? 0} porsi). Silakan kurangi porsi.
                 </p>
               )}
 
