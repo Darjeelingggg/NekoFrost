@@ -145,7 +145,7 @@ export default function CheckoutModal() {
         customerName,
         customerPhone,
         orderType,
-        deliveryLocation: orderType === "delivery" ? deliveryLocation : "Ambil di Stand",
+        deliveryLocation: orderType === "delivery" ? deliveryLocation : "Ambil di Lobby",
         notes,
         items: cart.map((item) => ({
           productId: item.product.id,
@@ -244,7 +244,7 @@ export default function CheckoutModal() {
                 <div>
                   <span className="text-xs font-bold block">Ambil Sendiri</span>
                   <span className={`text-[10px] block mt-0.5 ${orderType === "pickup" ? "text-gray-200" : "text-[#7C8B9E]"}`}>
-                    Di Stand NekoFrost
+                    Di Lobby
                   </span>
                 </div>
               </button>

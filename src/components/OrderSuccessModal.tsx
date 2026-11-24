@@ -29,14 +29,14 @@ export default function OrderSuccessModal() {
   const deliveryMethodText =
     latestOrder.orderType === "delivery"
       ? `Diantar ke ${latestOrder.deliveryLocation || "Kelas"}`
-      : "Ambil Sendiri di Stand";
+      : "Ambil Di Lobby";
 
   const paymentMethodText =
     latestOrder.paymentMethod === "qris"
       ? "QRIS"
       : latestOrder.paymentMethod === "transfer"
-      ? "Transfer Bank"
-      : "Tunai / COD";
+        ? "Transfer Bank"
+        : "Tunai / COD";
 
   const messageText = `Halo NekoFrost! Saya mau konfirmasi pesanan:
 Kode Pesanan: *#${latestOrder.id}*
