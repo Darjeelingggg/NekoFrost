@@ -145,7 +145,7 @@ export default function CheckoutModal() {
         customerName,
         customerPhone,
         orderType,
-        deliveryLocation: orderType === "delivery" ? deliveryLocation : "Ambil di Lobby",
+        deliveryLocation: orderType === "delivery" ? deliveryLocation : "Ambil Sendiri di Lobby",
         notes,
         items: cart.map((item) => ({
           productId: item.product.id,

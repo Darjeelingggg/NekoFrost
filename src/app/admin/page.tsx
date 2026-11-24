@@ -483,7 +483,7 @@ export default function AdminPage() {
                             <b>Pengambilan:</b>{" "}
                             {order.orderType === "delivery"
                               ? `Antar ke ${order.deliveryLocation}`
-                              : "Ambil di Lobby"}
+                              : "Ambil Sendiri di Lobby"}
                           </span>
                           <span>
                             <b>Pembayaran:</b> {order.paymentMethod.toUpperCase()}

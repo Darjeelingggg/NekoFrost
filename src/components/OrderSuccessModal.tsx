@@ -29,7 +29,7 @@ export default function OrderSuccessModal() {
   const deliveryMethodText =
     latestOrder.orderType === "delivery"
       ? `Diantar ke ${latestOrder.deliveryLocation || "Kelas"}`
-      : "Ambil Di Lobby";
+      : "Ambil Sendiri di Lobby";
 
   const paymentMethodText =
     latestOrder.paymentMethod === "qris"
