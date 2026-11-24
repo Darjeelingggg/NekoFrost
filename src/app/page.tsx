@@ -29,6 +29,8 @@ export default function HomePage() {
     setIsCartOpen,
     setSelectedProduct,
     addToCart,
+    getProductStock,
+    isProductAvailable,
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -199,6 +201,9 @@ export default function HomePage() {
                         maximumFractionDigits: 0,
                       }).format(bundle.price);
 
+                      const remaining = getProductStock(bundle.id);
+                      const isBundleAvailable = isProductAvailable(bundle.id);
+
                       return (
                         <div
                           key={bundle.id}
@@ -207,11 +212,22 @@ export default function HomePage() {
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
-                              {bundle.promoBadge && (
-                                <span className="inline-block text-[10px] font-black px-2 py-0.5 rounded-md bg-[#EBA9B5] text-[#1E447C] mb-1.5 shadow-xs">
-                                  {bundle.promoBadge}
+                              <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                                <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs ${
+                                  !isBundleAvailable
+                                    ? "bg-rose-100 text-rose-700 font-black"
+                                    : remaining <= 2
+                                    ? "bg-amber-400 text-[#1E447C] font-black animate-pulse"
+                                    : "bg-[#EAF2FD] text-[#2B5EA9]"
+                                }`}>
+                                  {!isBundleAvailable ? "Habis" : `Sisa ${remaining}`}
                                 </span>
-                              )}
+                                {bundle.promoBadge && (
+                                  <span className="inline-block text-[10px] font-black px-2 py-0.5 rounded-md bg-[#EBA9B5] text-[#1E447C] shadow-xs">
+                                    {bundle.promoBadge}
+                                  </span>
+                                )}
+                              </div>
                               <h3 className="text-sm sm:text-base font-bold text-[#1E447C] leading-snug group-hover:text-[#2B5EA9] transition-colors">
                                 {bundle.name}
                               </h3>
@@ -241,12 +257,19 @@ export default function HomePage() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                addToCart(bundle, 1);
+                                if (isBundleAvailable) {
+                                  addToCart(bundle, 1);
+                                }
                               }}
-                              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#2B5EA9] text-white text-xs font-bold hover:bg-[#EBA9B5] hover:text-[#1E447C] transition-colors shadow-xs active:scale-95"
+                              disabled={!isBundleAvailable}
+                              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors shadow-xs ${
+                                isBundleAvailable
+                                  ? "bg-[#2B5EA9] text-white hover:bg-[#EBA9B5] hover:text-[#1E447C] active:scale-95 cursor-pointer"
+                                  : "bg-neutral-200 text-neutral-400 cursor-not-allowed"
+                              }`}
                             >
                               <Plus className="w-3.5 h-3.5" />
-                              <span>Pesan</span>
+                              <span>{isBundleAvailable ? "Pesan" : "Habis"}</span>
                             </button>
                           </div>
                         </div>

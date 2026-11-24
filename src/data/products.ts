@@ -16,6 +16,7 @@ export const initialProducts: Product[] = [
     likes: 890,
     available: true,
     image: "/images/paket-komplit.png",
+    stock: 5,
   },
   {
     id: "pkt-hemat",
@@ -31,6 +32,7 @@ export const initialProducts: Product[] = [
     likes: 672,
     available: true,
     image: "/images/paket-komplit.png",
+    stock: 5,
   },
   {
     id: "pkt-snack",
@@ -46,6 +48,7 @@ export const initialProducts: Product[] = [
     likes: 415,
     available: true,
     image: "/images/paket-komplit.png",
+    stock: 5,
   },
   {
     id: "pkt-risol",
@@ -61,6 +64,7 @@ export const initialProducts: Product[] = [
     likes: 380,
     available: true,
     image: "/images/paket-risol.jpg",
+    stock: 5,
   },
 
   // --- MENU SATUAN: BONELESS CHICHICK ---
@@ -77,6 +81,7 @@ export const initialProducts: Product[] = [
     likes: 520,
     available: true,
     image: "/images/chichick-box.png",
+    stock: 5,
   },
   {
     id: "chk-keju",
@@ -91,6 +96,7 @@ export const initialProducts: Product[] = [
     likes: 740,
     available: true,
     image: "/images/chichick-keju.png",
+    stock: 5,
   },
   {
     id: "chk-kentang",
@@ -105,6 +111,7 @@ export const initialProducts: Product[] = [
     likes: 610,
     available: true,
     image: "/images/chichick-kentang.png",
+    stock: 5,
   },
 
   // --- MENU SATUAN: KENTANG GORENG ---
@@ -121,6 +128,7 @@ export const initialProducts: Product[] = [
     likes: 310,
     available: true,
     image: "/images/kentang-box.png",
+    stock: 5,
   },
   {
     id: "ktg-keju",
@@ -135,6 +143,7 @@ export const initialProducts: Product[] = [
     likes: 480,
     available: true,
     image: "/images/kentang-keju.png",
+    stock: 5,
   },
 
   // --- MENU SATUAN: RISOL MANIS ---
@@ -151,6 +160,7 @@ export const initialProducts: Product[] = [
     likes: 0,
     available: true,
     image: "/images/risol-coklat-keju.jpg",
+    stock: 5,
   },
   {
     id: "rsl-strawberry-keju",
@@ -165,6 +175,7 @@ export const initialProducts: Product[] = [
     likes: 0,
     available: true,
     image: "/images/risol-strawberry-keju.jpg",
+    stock: 5,
   },
   {
     id: "rsl-matcha",
@@ -179,6 +190,7 @@ export const initialProducts: Product[] = [
     likes: 0,
     available: true,
     image: "/images/risol-matcha.jpg",
+    stock: 5,
   },
 
   // --- MENU SATUAN: MINUMAN ---
@@ -195,5 +207,6 @@ export const initialProducts: Product[] = [
     likes: 690,
     available: true,
     image: "/images/yuzu-cup.png",
+    stock: 5,
   },
 ];

@@ -6,7 +6,7 @@ import { useApp } from "@/context/AppContext";
 import { Sparkles, ArrowRight, CheckCircle2, Utensils, Box, Sliders, Smartphone } from "lucide-react";
 
 export default function SignatureSpotlight() {
-  const { products, setSelectedProduct } = useApp();
+  const { products, setSelectedProduct, getProductStock, isProductAvailable } = useApp();
 
   // Find the exact products
   const chichickProduct =
@@ -16,6 +16,12 @@ export default function SignatureSpotlight() {
   const yuzuProduct =
     products.find((p) => p.id === "yuzu-ori") ||
     products.find((p) => p.category === "beverages");
+
+  const chkRemaining = chichickProduct ? getProductStock(chichickProduct.id) : 5;
+  const chkAvailable = chichickProduct ? isProductAvailable(chichickProduct.id) : true;
+
+  const yuzuRemaining = yuzuProduct ? getProductStock(yuzuProduct.id) : 5;
+  const yuzuAvailable = yuzuProduct ? isProductAvailable(yuzuProduct.id) : true;
 
   return (
     <section className="rounded-3xl bg-white text-[#1E2D44] p-6 sm:p-10 border border-[#E2DDD0] shadow-sm relative overflow-hidden space-y-8 sm:space-y-10">
@@ -78,17 +84,27 @@ export default function SignatureSpotlight() {
           {/* Price & CTA Action */}
           <div className="flex flex-wrap items-center gap-4 pt-2">
             <div>
-              <span className="text-[10px] uppercase tracking-wider text-[#8C9BAE] block font-semibold">Harga Satuan</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase tracking-wider text-[#8C9BAE] block font-semibold">Harga Satuan</span>
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${!chkAvailable ? "bg-rose-100 text-rose-700" : chkRemaining <= 2 ? "bg-amber-400 text-[#1E447C]" : "bg-[#EAF2FD] text-[#2B5EA9]"}`}>
+                  {!chkAvailable ? "Habis" : `Sisa ${chkRemaining}`}
+                </span>
+              </div>
               <span className="text-xl sm:text-2xl font-black text-[#1E447C]">Rp 13.000</span>
             </div>
 
             <button
               onClick={() => {
-                if (chichickProduct) setSelectedProduct(chichickProduct);
+                if (chichickProduct && chkAvailable) setSelectedProduct(chichickProduct);
               }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#2B5EA9] text-white text-xs sm:text-sm font-bold hover:bg-[#EBA9B5] hover:text-[#1E447C] hover:scale-105 transition-all shadow-md active:scale-95 cursor-pointer"
+              disabled={!chkAvailable}
+              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all shadow-md active:scale-95 ${
+                chkAvailable
+                  ? "bg-[#2B5EA9] text-white hover:bg-[#EBA9B5] hover:text-[#1E447C] hover:scale-105 cursor-pointer"
+                  : "bg-neutral-200 text-neutral-400 cursor-not-allowed"
+              }`}
             >
-              <span>Pesan Chichick</span>
+              <span>{chkAvailable ? "Pesan Chichick" : "Chichick Habis"}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -195,17 +211,27 @@ export default function SignatureSpotlight() {
           {/* Price & CTA Action */}
           <div className="flex flex-wrap items-center gap-4 pt-2">
             <div>
-              <span className="text-[10px] uppercase tracking-wider text-[#8C9BAE] block font-semibold">Harga Satuan</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase tracking-wider text-[#8C9BAE] block font-semibold">Harga Satuan</span>
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${!yuzuAvailable ? "bg-rose-100 text-rose-700" : yuzuRemaining <= 2 ? "bg-amber-400 text-[#1E447C]" : "bg-[#EAF2FD] text-[#2B5EA9]"}`}>
+                  {!yuzuAvailable ? "Habis" : `Sisa ${yuzuRemaining}`}
+                </span>
+              </div>
               <span className="text-xl sm:text-2xl font-black text-[#1E447C]">Rp 9.000</span>
             </div>
 
             <button
               onClick={() => {
-                if (yuzuProduct) setSelectedProduct(yuzuProduct);
+                if (yuzuProduct && yuzuAvailable) setSelectedProduct(yuzuProduct);
               }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#2B5EA9] text-white text-xs sm:text-sm font-bold hover:bg-[#EBA9B5] hover:text-[#1E447C] hover:scale-105 transition-all shadow-md active:scale-95 cursor-pointer"
+              disabled={!yuzuAvailable}
+              className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all shadow-md active:scale-95 ${
+                yuzuAvailable
+                  ? "bg-[#2B5EA9] text-white hover:bg-[#EBA9B5] hover:text-[#1E447C] hover:scale-105 cursor-pointer"
+                  : "bg-neutral-200 text-neutral-400 cursor-not-allowed"
+              }`}
             >
-              <span>Pesan Yuzu</span>
+              <span>{yuzuAvailable ? "Pesan Yuzu" : "Yuzu Habis"}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

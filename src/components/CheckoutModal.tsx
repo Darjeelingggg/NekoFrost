@@ -17,7 +17,7 @@ import {
 import { useApp } from "@/context/AppContext";
 
 export default function CheckoutModal() {
-  const { isCheckoutOpen, setIsCheckoutOpen, cart, cartTotal, createOrder } =
+  const { isCheckoutOpen, setIsCheckoutOpen, cart, cartTotal, createOrder, getProductStock } =
     useApp();
 
   const [customerName, setCustomerName] = useState("");
@@ -124,6 +124,19 @@ export default function CheckoutModal() {
         alert("PENTING: Wajib lampirkan foto bukti pembayaran transfer / QRIS terlebih dahulu!");
       }
       return;
+    }
+
+    // Realtime stock re-verification before submitting order
+    for (const item of cart) {
+      const remaining = getProductStock(item.product.id);
+      if (item.quantity > remaining) {
+        if (remaining <= 0) {
+          alert(`Maaf, menu "${item.product.name}" baru saja habis! Silakan hapus menu ini dari keranjang.`);
+        } else {
+          alert(`Maaf, sisa stok untuk "${item.product.name}" hanya tinggal ${remaining} porsi. Silakan sesuaikan jumlah di keranjang.`);
+        }
+        return;
+      }
     }
 
     setIsSubmitting(true);

@@ -14,6 +14,7 @@ export default function CartDrawer() {
     removeFromCart,
     cartTotal,
     setIsCheckoutOpen,
+    getProductStock,
   } = useApp();
 
   const [mounted, setMounted] = useState(false);
@@ -116,6 +117,9 @@ export default function CartDrawer() {
                 maximumFractionDigits: 0,
               }).format(itemTotal);
 
+              const remaining = getProductStock(item.product.id);
+              const exceedsStock = item.quantity > remaining;
+
               return (
                 <div
                   key={item.product.id}
@@ -123,7 +127,9 @@ export default function CartDrawer() {
                     animation: mounted && !animatingOut ? "itemCardSlideIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) backwards" : undefined,
                     animationDelay: `${idx * 60}ms`,
                   }}
-                  className="bg-white rounded-3xl p-4 border border-[#E2DDD0] shadow-sm hover:shadow-md transition-all flex items-center gap-3.5 relative"
+                  className={`bg-white rounded-3xl p-4 border shadow-sm hover:shadow-md transition-all flex items-center gap-3.5 relative ${
+                    exceedsStock ? "border-rose-400 bg-rose-50/30" : "border-[#E2DDD0]"
+                  }`}
                 >
                   {/* Floating Food Thumbnail */}
                   <div className="relative w-18 h-18 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-[#FAF8F2] flex-shrink-0 border border-[#E8E3D8] shadow-sm p-1.5 flex items-center justify-center">
@@ -144,6 +150,12 @@ export default function CartDrawer() {
                     <p className="text-[11px] text-[#7C8B9E] mt-0.5">
                       Rp {item.product.price.toLocaleString("id-ID")} / porsi
                     </p>
+
+                    {exceedsStock && (
+                      <span className="text-[10px] text-rose-600 font-bold block mt-0.5">
+                        ⚠️ Stok hanya sisa {remaining} porsi!
+                      </span>
+                    )}
 
                     {item.notes && (
                       <p className="text-[10px] text-[#2B5EA9] italic truncate mt-0.5">
@@ -167,7 +179,8 @@ export default function CartDrawer() {
                         </span>
                         <button
                           onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                          className="p-1 text-[#2B5EA9] hover:text-[#EBA9B5] transition-colors active:scale-80"
+                          disabled={item.quantity >= remaining}
+                          className="p-1 text-[#2B5EA9] hover:text-[#EBA9B5] transition-colors active:scale-80 disabled:opacity-30"
                           aria-label="Tambah"
                         >
                           <Plus className="w-3 h-3" />
@@ -196,26 +209,41 @@ export default function CartDrawer() {
         </div>
 
         {/* Drawer Footer with animated checkout CTA */}
-        {cart.length > 0 && (
-          <div className="p-5 border-t border-[#E2DDD0] bg-white rounded-t-3xl shadow-[0_-10px_20px_-5px_rgba(43,94,169,0.06)]">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs sm:text-sm text-[#7C8B9E] font-medium">
-                Total Tagihan ({cart.reduce((s, i) => s + i.quantity, 0)} item)
-              </span>
-              <span className="text-lg sm:text-xl font-black text-[#1E447C]">
-                {formattedTotal}
-              </span>
-            </div>
+        {cart.length > 0 && (() => {
+          const hasExceededItems = cart.some((i) => i.quantity > getProductStock(i.product.id));
 
-            <button
-              onClick={handleProceedToCheckout}
-              className="w-full py-3.5 px-6 rounded-full bg-[#2B5EA9] text-white font-bold text-sm hover:bg-[#1E447C] hover:shadow-xl active:scale-98 transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
-            >
-              <span>Lanjut ke Pembayaran</span>
-              <ArrowRight className="w-4 h-4 text-[#EBA9B5]" />
-            </button>
-          </div>
-        )}
+          return (
+            <div className="p-5 border-t border-[#E2DDD0] bg-white rounded-t-3xl shadow-[0_-10px_20px_-5px_rgba(43,94,169,0.06)]">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-xs sm:text-sm text-[#7C8B9E] font-medium">
+                  Total Tagihan ({cart.reduce((s, i) => s + i.quantity, 0)} item)
+                </span>
+                <span className="text-lg sm:text-xl font-black text-[#1E447C]">
+                  {formattedTotal}
+                </span>
+              </div>
+
+              {hasExceededItems && (
+                <p className="text-xs text-rose-600 font-bold mb-3 text-center">
+                  Beberapa menu melebihi sisa stok. Silakan kurangi porsi.
+                </p>
+              )}
+
+              <button
+                onClick={handleProceedToCheckout}
+                disabled={hasExceededItems}
+                className={`w-full py-3.5 px-6 rounded-full font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg ${
+                  hasExceededItems
+                    ? "bg-neutral-300 text-neutral-500 cursor-not-allowed"
+                    : "bg-[#2B5EA9] text-white hover:bg-[#1E447C] hover:shadow-xl active:scale-98 cursor-pointer"
+                }`}
+              >
+                <span>{hasExceededItems ? "Sesuaikan Keranjang Dulu" : "Lanjut ke Pembayaran"}</span>
+                <ArrowRight className="w-4 h-4 text-[#EBA9B5]" />
+              </button>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Embedded CSS Keyframe Animation for Cart Item Cards */}

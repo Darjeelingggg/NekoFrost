@@ -14,6 +14,7 @@ export interface Product {
   likes: number;
   available: boolean;
   image: string;
+  stock?: number;
 }
 
 export interface CartItem {

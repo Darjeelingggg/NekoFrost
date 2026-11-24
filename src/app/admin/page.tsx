@@ -36,6 +36,8 @@ export default function AdminPage() {
     updateProduct,
     addProduct,
     refreshOrders,
+    getProductStock,
+    getProductOrderedQty,
   } = useApp();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -62,6 +64,7 @@ export default function AdminPage() {
   // Edit product modal state
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editPrice, setEditPrice] = useState("");
+  const [editStock, setEditStock] = useState("5");
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,6 +166,7 @@ export default function AdminPage() {
     updateProduct({
       ...editingProduct,
       price: parseInt(editPrice, 10) || editingProduct.price,
+      stock: parseInt(editStock, 10) || (editingProduct.stock ?? 5),
     });
     setEditingProduct(null);
   };
@@ -616,15 +620,37 @@ export default function AdminPage() {
                       onClick={() => {
                         setEditingProduct(prod);
                         setEditPrice(prod.price.toString());
+                        setEditStock((prod.stock ?? 5).toString());
                       }}
                       className="p-1.5 rounded-lg text-[#7C8B9E] hover:text-[#2B5EA9] hover:bg-[#F4F8FC]"
-                      title="Edit Harga"
+                      title="Edit Menu & Stok"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-[#EFEBE1] flex items-center justify-between">
+                  {(() => {
+                    const remaining = getProductStock(prod.id);
+                    const ordered = getProductOrderedQty(prod.id);
+                    const base = prod.stock ?? 5;
+
+                    return (
+                      <div className="mt-2.5 p-2 rounded-xl bg-[#F8FAFC] border border-[#E2DDD0]/80 text-xs flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] text-[#7C8B9E] block uppercase font-bold">Stok Realtime</span>
+                          <span className={`font-black ${remaining === 0 ? "text-rose-600" : remaining <= 2 ? "text-amber-600" : "text-emerald-700"}`}>
+                            Sisa {remaining} / {base}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] text-[#7C8B9E] block uppercase font-bold">Terjual</span>
+                          <span className="font-bold text-[#1E447C]">{ordered} porsi</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  <div className="mt-3 pt-3 border-t border-[#EFEBE1] flex items-center justify-between">
                     <span className="text-xs text-[#67778E] font-medium">Status Menu:</span>
                     <button
                       onClick={() => toggleProductAvailability(prod.id)}
@@ -743,17 +769,17 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* Modal: Edit Harga Produk */}
+        {/* Modal: Edit Menu & Stok Produk */}
         {editingProduct && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
             <div className="w-full max-w-sm bg-white rounded-3xl p-6 border border-[#E2DDD0] shadow-2xl">
               <h3 className="text-base font-serif font-bold text-[#1E447C] mb-2">
-                Edit Harga: {editingProduct.name}
+                Edit Menu: {editingProduct.name}
               </h3>
               <form onSubmit={handleSaveEditProduct} className="space-y-4">
                 <div>
                   <label className="block text-xs font-semibold text-[#67778E] mb-1">
-                    Harga Baru (Rp)
+                    Harga (Rp)
                   </label>
                   <input
                     type="number"
@@ -762,6 +788,23 @@ export default function AdminPage() {
                     onChange={(e) => setEditPrice(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-[#D0D9E6] text-sm font-bold text-[#1E447C] focus:outline-none focus:ring-2 focus:ring-[#2B5EA9]"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#67778E] mb-1">
+                    Batas Kuota / Stok Awal (Porsi)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    value={editStock}
+                    onChange={(e) => setEditStock(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#D0D9E6] text-sm font-bold text-[#1E447C] focus:outline-none focus:ring-2 focus:ring-[#2B5EA9]"
+                  />
+                  <span className="text-[10px] text-[#7C8B9E] block mt-1">
+                    Default 5 porsi. Sisa stok akan otomatis berkurang tiap ada yang order.
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-end gap-2 pt-2">

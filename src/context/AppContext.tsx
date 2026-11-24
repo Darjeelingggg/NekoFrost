@@ -51,6 +51,11 @@ interface AppContextType {
   updateProduct: (product: Product) => void;
   addProduct: (product: Product) => void;
 
+  // Realtime Stock helpers
+  getProductStock: (productId: string) => number;
+  getProductOrderedQty: (productId: string) => number;
+  isProductAvailable: (productId: string) => boolean;
+
   // Interactivity: Toast & Likes
   toastMessage: string | null;
   showToast: (msg: string) => void;
@@ -60,7 +65,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_PRODUCTS = "kwu_products_v16";
+const LOCAL_STORAGE_PRODUCTS = "kwu_products_v17";
 const LOCAL_STORAGE_CART = "kwu_cart_v3";
 const LOCAL_STORAGE_ORDERS = "kwu_orders_v4";
 const LOCAL_STORAGE_LIKES = "kwu_likes_v1";
@@ -87,9 +92,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const savedProducts = localStorage.getItem(LOCAL_STORAGE_PRODUCTS);
       if (savedProducts) {
-        setProducts(JSON.parse(savedProducts));
+        const parsed = JSON.parse(savedProducts);
+        const normalized = parsed.map((p: Product) => ({
+          ...p,
+          stock: typeof p.stock === "number" ? p.stock : 5,
+        }));
+        setProducts(normalized);
       } else {
         localStorage.setItem(LOCAL_STORAGE_PRODUCTS, JSON.stringify(initialProducts));
+        setProducts(initialProducts);
       }
 
       const savedCart = localStorage.getItem(LOCAL_STORAGE_CART);
@@ -139,8 +150,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       )
       .subscribe();
 
+    // Resilient periodic sync + sync on tab focus for instant real-time updates
+    const pollInterval = setInterval(() => {
+      syncOrders();
+    }, 8000);
+
+    const onFocus = () => {
+      syncOrders();
+    };
+    window.addEventListener("focus", onFocus);
+
     return () => {
       isMounted = false;
+      clearInterval(pollInterval);
+      window.removeEventListener("focus", onFocus);
       supabase?.removeChannel(channel);
     };
   }, []);
@@ -211,9 +234,50 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  // Realtime Stock & Order Count Helpers
+  const getProductOrderedQty = (productId: string): number => {
+    return orders
+      .filter((o) => o.status !== "cancelled")
+      .reduce((sum, o) => {
+        const item = o.items.find((i) => i.productId === productId);
+        return sum + (item ? item.quantity : 0);
+      }, 0);
+  };
+
+  const getProductStock = (productId: string): number => {
+    const prod = products.find((p) => p.id === productId);
+    const baseStock = typeof prod?.stock === "number" ? prod.stock : 5;
+    const ordered = getProductOrderedQty(productId);
+    return Math.max(0, baseStock - ordered);
+  };
+
+  const isProductAvailable = (productId: string): boolean => {
+    const prod = products.find((p) => p.id === productId);
+    if (!prod || prod.available === false) return false;
+    return getProductStock(productId) > 0;
+  };
+
   const addToCart = (product: Product, quantity = 1, notes = "") => {
+    const remaining = getProductStock(product.id);
+    const existing = cart.find((item) => item.product.id === product.id);
+    const currentInCart = existing ? existing.quantity : 0;
+    const totalRequested = currentInCart + quantity;
+
+    if (remaining <= 0) {
+      showToast(`Maaf, ${product.name} sudah habis terjual!`);
+      return;
+    }
+
+    if (totalRequested > remaining) {
+      if (currentInCart > 0) {
+        showToast(`Maaf, stok tersisa ${remaining} porsi (${currentInCart} sudah ada di keranjang).`);
+      } else {
+        showToast(`Maaf, stok ${product.name} hanya tersisa ${remaining} porsi.`);
+      }
+      return;
+    }
+
     setCart((prev) => {
-      const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
         return prev.map((item) =>
           item.product.id === product.id
@@ -233,6 +297,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateQuantity = (productId: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId);
+      return;
+    }
+    const remaining = getProductStock(productId);
+    if (quantity > remaining) {
+      showToast(`Maksimal hanya ${remaining} porsi sesuai stok yang tersedia.`);
       return;
     }
     setCart((prev) =>
@@ -261,6 +330,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const createOrder = (orderData: Omit<Order, "id" | "createdAt" | "status">): Order => {
+    // Re-verify stock for each ordered item before accepting order
+    for (const item of orderData.items) {
+      const remaining = getProductStock(item.productId);
+      if (item.quantity > remaining) {
+        const errorMsg = `Maaf, stok untuk ${item.productName} hanya tersisa ${remaining} porsi!`;
+        showToast(errorMsg);
+        throw new Error(errorMsg);
+      }
+    }
+
     const randomNum = Math.floor(1000 + Math.random() * 9000);
     const newOrder: Order = {
       ...orderData,
@@ -359,6 +438,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         toggleProductAvailability,
         updateProduct,
         addProduct,
+        getProductStock,
+        getProductOrderedQty,
+        isProductAvailable,
         toastMessage,
         showToast,
         likedProductIds,

@@ -11,7 +11,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const { setSelectedProduct, addToCart, cart, likedProductIds, toggleLike } = useApp();
+  const { setSelectedProduct, addToCart, cart, likedProductIds, toggleLike, getProductStock, isProductAvailable } = useApp();
 
   const formattedPrice = new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -26,6 +26,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   const isLiked = likedProductIds.includes(product.id);
   const likesCount = (product.likes || 120) + (isLiked ? 1 : 0);
 
+  const remainingStock = getProductStock(product.id);
+  const isAvailable = isProductAvailable(product.id);
+
   return (
     <div
       onClick={() => setSelectedProduct(product)}
@@ -34,15 +37,19 @@ export default function ProductCard({ product }: ProductCardProps) {
       {/* Top Meta Badges & Like Button */}
       <div className="flex items-center justify-between z-10 mb-2 gap-2">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span
-            className={`text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full ${
-              product.available
-                ? "bg-[#2B5EA9] text-white"
-                : "bg-neutral-200 text-neutral-500 line-through"
-            }`}
-          >
-            {product.available ? "Tersedia" : "Habis"}
-          </span>
+          {!isAvailable ? (
+            <span className="text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+              Habis
+            </span>
+          ) : remainingStock <= 2 ? (
+            <span className="text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500 text-white shadow-xs animate-pulse">
+              Sisa {remainingStock}!
+            </span>
+          ) : (
+            <span className="text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#2B5EA9] text-white">
+              Sisa {remainingStock}
+            </span>
+          )}
 
           {product.promoBadge && (
             <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-[#EBA9B5] text-[#1E447C] whitespace-nowrap shadow-xs">
@@ -134,16 +141,20 @@ export default function ProductCard({ product }: ProductCardProps) {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              if (product.available) {
+              if (isAvailable) {
                 addToCart(product, 1);
               }
             }}
-            disabled={!product.available}
+            disabled={!isAvailable}
             aria-label={`Tambah ${product.name} ke keranjang`}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#2B5EA9] text-white text-xs font-bold hover:bg-[#EBA9B5] hover:text-[#1E447C] transition-all shadow-xs active:scale-95 disabled:opacity-50 cursor-pointer"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-xs ${
+              isAvailable
+                ? "bg-[#2B5EA9] text-white hover:bg-[#EBA9B5] hover:text-[#1E447C] active:scale-95 cursor-pointer"
+                : "bg-neutral-200 text-neutral-400 cursor-not-allowed"
+            }`}
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Pesan</span>
+            <span>{isAvailable ? "Pesan" : "Habis"}</span>
           </button>
         </div>
       </div>
