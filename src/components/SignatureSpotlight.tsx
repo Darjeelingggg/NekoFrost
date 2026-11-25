@@ -17,7 +17,7 @@ export default function SignatureSpotlight() {
     products.find((p) => p.id === "yuzu-ori") ||
     products.find((p) => p.category === "beverages");
 
-  const chkRemaining = chichickProduct ? getProductStock(chichickProduct.id) : 5;
+  const chkRemaining = chichickProduct ? getProductStock(chichickProduct.id) : 7;
   const chkAvailable = chichickProduct ? isProductAvailable(chichickProduct.id) : true;
 
   const yuzuRemaining = yuzuProduct ? getProductStock(yuzuProduct.id) : 5;
