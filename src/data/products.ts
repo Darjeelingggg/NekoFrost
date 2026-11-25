@@ -152,7 +152,7 @@ export const initialProducts: Product[] = [
     likes: 0,
     available: true,
     image: "/images/risol-coklat-keju.jpg",
-    stock: 5,
+    stock: 6,
   },
   {
     id: "rsl-strawberry-keju",

@@ -69,7 +69,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_PRODUCTS = "kwu_products_v22";
+const LOCAL_STORAGE_PRODUCTS = "kwu_products_v23";
 const LOCAL_STORAGE_CART = "kwu_cart_v3";
 const LOCAL_STORAGE_ORDERS = "kwu_orders_v4";
 const LOCAL_STORAGE_LIKES = "kwu_likes_v1";
@@ -316,10 +316,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  // Waktu restock Risol Coklat (25 Nov 2026 20:15 WIB) -> Stok awal restock menjadi 6
+  const RISOL_COKLAT_RESTOCK_TIME = new Date("2026-11-25T13:15:00Z").getTime();
+
   // Helper: Hitung jumlah terpakai dari masing-masing bahan mentah / komponen
   const getIngredientUsage = (ingredient: keyof ProductRequirement): number => {
     return orders
-      .filter((o) => o.status !== "cancelled")
+      .filter((o) => {
+        if (o.status === "cancelled") return false;
+        // Khusus Risol Coklat, hanya hitung pesanan setelah restock agar sisa stok menjadi 6
+        if (ingredient === "risolCoklat") {
+          const orderTime = new Date(o.createdAt).getTime();
+          return orderTime >= RISOL_COKLAT_RESTOCK_TIME;
+        }
+        return true;
+      })
       .reduce((sum, o) => {
         let orderSum = 0;
         o.items.forEach((item) => {
@@ -346,7 +357,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       baseStock = typeof p?.stock === "number" ? p.stock : 5;
     } else if (ingredient === "risolCoklat") {
       const p = products.find((prod) => prod.id === "rsl-coklat-keju");
-      baseStock = typeof p?.stock === "number" ? p.stock : 5;
+      baseStock = typeof p?.stock === "number" ? p.stock : 6;
     } else if (ingredient === "risolStrawberry") {
       const p = products.find((prod) => prod.id === "rsl-strawberry-keju");
       baseStock = typeof p?.stock === "number" ? p.stock : 5;
