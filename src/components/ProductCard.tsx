@@ -11,7 +11,7 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const { setSelectedProduct, addToCart, cart, likedProductIds, toggleLike, getProductStock, isProductAvailable } = useApp();
+  const { setSelectedProduct, addToCart, cart, likedProductIds, toggleLike, getProductStock, isProductAvailable, hasStockLimit } = useApp();
 
   const formattedPrice = new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -41,13 +41,19 @@ export default function ProductCard({ product }: ProductCardProps) {
             <span className="text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
               Habis
             </span>
-          ) : remainingStock <= 2 ? (
-            <span className="text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500 text-white shadow-xs animate-pulse">
-              Sisa {remainingStock}!
-            </span>
+          ) : hasStockLimit(product.id) ? (
+            remainingStock <= 2 ? (
+              <span className="text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500 text-white shadow-xs animate-pulse">
+                Sisa {remainingStock}!
+              </span>
+            ) : (
+              <span className="text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#2B5EA9] text-white">
+                Sisa {remainingStock}
+              </span>
+            )
           ) : (
             <span className="text-[10px] sm:text-xs font-bold px-2.5 py-0.5 rounded-full bg-[#2B5EA9] text-white">
-              Sisa {remainingStock}
+              Ready
             </span>
           )}
 

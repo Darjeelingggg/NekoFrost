@@ -16,7 +16,6 @@ export const initialProducts: Product[] = [
     likes: 890,
     available: true,
     image: "/images/paket-komplit.png",
-    stock: 7,
   },
   {
     id: "pkt-hemat",
@@ -32,7 +31,6 @@ export const initialProducts: Product[] = [
     likes: 672,
     available: true,
     image: "/images/paket-komplit.png",
-    stock: 7,
   },
   {
     id: "pkt-snack",
@@ -48,7 +46,6 @@ export const initialProducts: Product[] = [
     likes: 415,
     available: true,
     image: "/images/paket-komplit.png",
-    stock: 7,
   },
   {
     id: "pkt-risol",
@@ -81,7 +78,6 @@ export const initialProducts: Product[] = [
     likes: 520,
     available: true,
     image: "/images/chichick-box.png",
-    stock: 7,
   },
   {
     id: "chk-keju",
@@ -96,7 +92,6 @@ export const initialProducts: Product[] = [
     likes: 740,
     available: true,
     image: "/images/chichick-keju.png",
-    stock: 7,
   },
   {
     id: "chk-kentang",
@@ -111,7 +106,6 @@ export const initialProducts: Product[] = [
     likes: 610,
     available: true,
     image: "/images/chichick-kentang.png",
-    stock: 7,
   },
 
   // --- MENU SATUAN: KENTANG GORENG ---
@@ -128,7 +122,6 @@ export const initialProducts: Product[] = [
     likes: 310,
     available: true,
     image: "/images/kentang-box.png",
-    stock: 7,
   },
   {
     id: "ktg-keju",
@@ -143,7 +136,6 @@ export const initialProducts: Product[] = [
     likes: 480,
     available: true,
     image: "/images/kentang-keju.png",
-    stock: 7,
   },
 
   // --- MENU SATUAN: RISOL MANIS ---
@@ -207,6 +199,5 @@ export const initialProducts: Product[] = [
     likes: 690,
     available: true,
     image: "/images/yuzu-cup.png",
-    stock: 5,
   },
 ];

@@ -55,6 +55,7 @@ interface AppContextType {
   getProductStock: (productId: string) => number;
   getProductOrderedQty: (productId: string) => number;
   isProductAvailable: (productId: string) => boolean;
+  hasStockLimit: (productId: string) => boolean;
   validateCartAgainstStock: (
     itemsToCheck: { productId: string; quantity: number }[]
   ) => { valid: boolean; errorItem?: string; remaining?: number };
@@ -68,10 +69,23 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_PRODUCTS = "kwu_products_v21";
+const LOCAL_STORAGE_PRODUCTS = "kwu_products_v22";
 const LOCAL_STORAGE_CART = "kwu_cart_v3";
 const LOCAL_STORAGE_ORDERS = "kwu_orders_v4";
 const LOCAL_STORAGE_LIKES = "kwu_likes_v1";
+
+// Daftar produk yang memiliki batasan kuota stok (Hanya varian Risol)
+// Boneless Chichick, Kentang Goreng, dan Minuman Yuzu tidak memiliki batasan stok
+export const LIMITED_STOCK_PRODUCT_IDS = [
+  "rsl-coklat-keju",
+  "rsl-strawberry-keju",
+  "rsl-matcha",
+  "pkt-risol",
+];
+
+export const hasStockLimit = (productId: string): boolean => {
+  return LIMITED_STOCK_PRODUCT_IDS.includes(productId);
+};
 
 // Mapping resep/komponen untuk setiap menu Paket (Bundling)
 export const BUNDLE_RECIPES: Record<string, { productId: string; qty: number }[]> = {
@@ -373,9 +387,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const getProductStock = (productId: string): number => {
+    // Boneless Chichick, Kentang, dan Yuzu tidak ada batasan stok
+    if (!hasStockLimit(productId)) {
+      return 999;
+    }
+
     const prod = products.find((p) => p.id === productId);
     if (!prod) return 0;
-    const ownStock = typeof prod.stock === "number" ? prod.stock : 7;
+    const ownStock = typeof prod.stock === "number" ? prod.stock : 5;
 
     const req = PRODUCT_REQUIREMENTS[productId];
     if (!req) {
@@ -388,11 +407,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return Math.max(0, ownStock - directOrders);
     }
 
-    // Hitung batas maksimal berdasarkan ketersediaan tiap bahan komponen yang dibutuhkan
+    // Khusus Risol: dibatasi ketersediaan bahan isian risol & paket risol
     const limits: number[] = [ownStock];
-    if (req.chicken) limits.push(Math.floor(getIngredientRemaining("chicken") / req.chicken));
-    if (req.kentang) limits.push(Math.floor(getIngredientRemaining("kentang") / req.kentang));
-    if (req.yuzu) limits.push(Math.floor(getIngredientRemaining("yuzu") / req.yuzu));
     if (req.risolCoklat) limits.push(Math.floor(getIngredientRemaining("risolCoklat") / req.risolCoklat));
     if (req.risolStrawberry) limits.push(Math.floor(getIngredientRemaining("risolStrawberry") / req.risolStrawberry));
     if (req.risolMatcha) limits.push(Math.floor(getIngredientRemaining("risolMatcha") / req.risolMatcha));
@@ -403,6 +419,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const isProductAvailable = (productId: string): boolean => {
     const prod = products.find((p) => p.id === productId);
     if (!prod || prod.available === false) return false;
+    if (!hasStockLimit(productId)) return true;
     return getProductStock(productId) > 0;
   };
 
@@ -410,26 +427,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const validateCartAgainstStock = (
     itemsToCheck: { productId: string; quantity: number }[]
   ): { valid: boolean; errorItem?: string; remaining?: number } => {
-    // 1. Cek langsung setiap produk di keranjang
+    // 1. Cek langsung setiap produk di keranjang yang memiliki batasan stok (Risol)
     for (const item of itemsToCheck) {
-      const remaining = getProductStock(item.productId);
-      if (item.quantity > remaining) {
-        const prod = products.find((p) => p.id === item.productId);
-        return { valid: false, errorItem: prod?.name || item.productId, remaining };
+      if (hasStockLimit(item.productId)) {
+        const remaining = getProductStock(item.productId);
+        if (item.quantity > remaining) {
+          const prod = products.find((p) => p.id === item.productId);
+          return { valid: false, errorItem: prod?.name || item.productId, remaining };
+        }
       }
     }
 
-    // 2. Cek total kebutuhan bahan/komponen gabungan seluruh keranjang
-    const ingredients: (keyof ProductRequirement)[] = [
-      "chicken",
-      "kentang",
-      "yuzu",
+    // 2. Cek total kebutuhan bahan yang terbatas (Risol)
+    const limitedIngredients: (keyof ProductRequirement)[] = [
       "risolCoklat",
       "risolStrawberry",
       "risolMatcha",
     ];
 
-    for (const ing of ingredients) {
+    for (const ing of limitedIngredients) {
       let totalCartDemand = 0;
       for (const item of itemsToCheck) {
         const req = PRODUCT_REQUIREMENTS[item.productId];
@@ -448,7 +464,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           const culpritProd = culprit ? products.find((p) => p.id === culprit.productId) : null;
           return {
             valid: false,
-            errorItem: culpritProd?.name || `Bahan Mentah (${ing})`,
+            errorItem: culpritProd?.name || `Varian Risol`,
             remaining: available,
           };
         }
@@ -642,6 +658,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         getProductStock,
         getProductOrderedQty,
         isProductAvailable,
+        hasStockLimit,
         validateCartAgainstStock,
         toastMessage,
         showToast,

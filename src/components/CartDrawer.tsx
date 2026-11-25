@@ -15,6 +15,7 @@ export default function CartDrawer() {
     cartTotal,
     setIsCheckoutOpen,
     getProductStock,
+    hasStockLimit,
     validateCartAgainstStock,
   } = useApp();
 
@@ -119,7 +120,8 @@ export default function CartDrawer() {
               }).format(itemTotal);
 
               const remaining = getProductStock(item.product.id);
-              const exceedsStock = item.quantity > remaining;
+              const isLimited = hasStockLimit(item.product.id);
+              const exceedsStock = isLimited && item.quantity > remaining;
 
               return (
                 <div
@@ -180,7 +182,7 @@ export default function CartDrawer() {
                         </span>
                         <button
                           onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                          disabled={item.quantity >= remaining}
+                          disabled={isLimited && item.quantity >= remaining}
                           className="p-1 text-[#2B5EA9] hover:text-[#EBA9B5] transition-colors active:scale-80 disabled:opacity-30"
                           aria-label="Tambah"
                         >

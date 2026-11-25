@@ -86,8 +86,8 @@ export default function SignatureSpotlight() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] uppercase tracking-wider text-[#8C9BAE] block font-semibold">Harga Satuan</span>
-                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${!chkAvailable ? "bg-rose-100 text-rose-700" : chkRemaining <= 2 ? "bg-amber-400 text-[#1E447C]" : "bg-[#EAF2FD] text-[#2B5EA9]"}`}>
-                  {!chkAvailable ? "Habis" : `Sisa ${chkRemaining}`}
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${!chkAvailable ? "bg-rose-100 text-rose-700" : "bg-[#EAF2FD] text-[#2B5EA9]"}`}>
+                  {!chkAvailable ? "Habis" : "Ready"}
                 </span>
               </div>
               <span className="text-xl sm:text-2xl font-black text-[#1E447C]">Rp 13.000</span>
@@ -213,8 +213,8 @@ export default function SignatureSpotlight() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] uppercase tracking-wider text-[#8C9BAE] block font-semibold">Harga Satuan</span>
-                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${!yuzuAvailable ? "bg-rose-100 text-rose-700" : yuzuRemaining <= 2 ? "bg-amber-400 text-[#1E447C]" : "bg-[#EAF2FD] text-[#2B5EA9]"}`}>
-                  {!yuzuAvailable ? "Habis" : `Sisa ${yuzuRemaining}`}
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${!yuzuAvailable ? "bg-rose-100 text-rose-700" : "bg-[#EAF2FD] text-[#2B5EA9]"}`}>
+                  {!yuzuAvailable ? "Habis" : "Ready"}
                 </span>
               </div>
               <span className="text-xl sm:text-2xl font-black text-[#1E447C]">Rp 9.000</span>

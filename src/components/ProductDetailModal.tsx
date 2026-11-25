@@ -6,7 +6,7 @@ import { ArrowLeft, Heart, Minus, Plus, Check } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
 export default function ProductDetailModal() {
-  const { selectedProduct, setSelectedProduct, addToCart, getProductStock, isProductAvailable } = useApp();
+  const { selectedProduct, setSelectedProduct, addToCart, getProductStock, isProductAvailable, hasStockLimit } = useApp();
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
   const [isLiked, setIsLiked] = useState(false);
@@ -14,8 +14,10 @@ export default function ProductDetailModal() {
 
   if (!selectedProduct) return null;
 
+  const isLimited = hasStockLimit(selectedProduct.id);
   const remaining = getProductStock(selectedProduct.id);
   const isAvailable = isProductAvailable(selectedProduct.id);
+  const maxQty = isLimited ? remaining : 99;
 
   const handleClose = () => {
     setSelectedProduct(null);
@@ -118,8 +120,12 @@ export default function ProductDetailModal() {
             <div className="flex items-center gap-3">
               <span>{selectedProduct.portion}</span>
               <span>•</span>
-              <span className={`font-bold ${!isAvailable ? "text-rose-300" : remaining <= 2 ? "text-amber-300 animate-pulse" : "text-[#EBA9B5]"}`}>
-                {!isAvailable ? "Habis (Sold Out)" : `Sisa ${remaining} Porsi`}
+              <span className={`font-bold ${!isAvailable ? "text-rose-300" : isLimited && remaining <= 2 ? "text-amber-300 animate-pulse" : "text-[#EBA9B5]"}`}>
+                {!isAvailable
+                  ? "Habis (Sold Out)"
+                  : isLimited
+                  ? `Sisa ${remaining} Porsi`
+                  : "Tersedia (Ready)"}
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-white">
@@ -173,10 +179,10 @@ export default function ProductDetailModal() {
                 {isAvailable ? quantity : 0}
               </span>
               <button
-                onClick={() => setQuantity((q) => Math.min(remaining, q + 1))}
+                onClick={() => setQuantity((q) => Math.min(maxQty, q + 1))}
                 className="p-1 hover:text-[#EBA9B5] transition-colors disabled:opacity-30"
                 aria-label="Tambah jumlah"
-                disabled={!isAvailable || quantity >= remaining}
+                disabled={!isAvailable || quantity >= maxQty}
               >
                 <Plus className="w-4 h-4" />
               </button>

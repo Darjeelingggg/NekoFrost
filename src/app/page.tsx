@@ -31,6 +31,7 @@ export default function HomePage() {
     addToCart,
     getProductStock,
     isProductAvailable,
+    hasStockLimit,
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -216,11 +217,15 @@ export default function HomePage() {
                                 <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs ${
                                   !isBundleAvailable
                                     ? "bg-rose-100 text-rose-700 font-black"
-                                    : remaining <= 2
+                                    : hasStockLimit(bundle.id) && remaining <= 2
                                     ? "bg-amber-400 text-[#1E447C] font-black animate-pulse"
                                     : "bg-[#EAF2FD] text-[#2B5EA9]"
                                 }`}>
-                                  {!isBundleAvailable ? "Habis" : `Sisa ${remaining}`}
+                                  {!isBundleAvailable
+                                    ? "Habis"
+                                    : hasStockLimit(bundle.id)
+                                    ? `Sisa ${remaining}`
+                                    : "Ready"}
                                 </span>
                                 {bundle.promoBadge && (
                                   <span className="inline-block text-[10px] font-black px-2 py-0.5 rounded-md bg-[#EBA9B5] text-[#1E447C] shadow-xs">

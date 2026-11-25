@@ -38,6 +38,7 @@ export default function AdminPage() {
     refreshOrders,
     getProductStock,
     getProductOrderedQty,
+    hasStockLimit,
   } = useApp();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -627,6 +628,7 @@ export default function AdminPage() {
                   </div>
 
                   {(() => {
+                    const isLimited = hasStockLimit(prod.id);
                     const remaining = getProductStock(prod.id);
                     const ordered = getProductOrderedQty(prod.id);
                     const base = prod.stock ?? 5;
@@ -635,9 +637,15 @@ export default function AdminPage() {
                       <div className="mt-2.5 p-2 rounded-xl bg-[#F8FAFC] border border-[#E2DDD0]/80 text-xs flex items-center justify-between">
                         <div>
                           <span className="text-[10px] text-[#7C8B9E] block uppercase font-bold">Stok Realtime</span>
-                          <span className={`font-black ${remaining === 0 ? "text-rose-600" : remaining <= 2 ? "text-amber-600" : "text-emerald-700"}`}>
-                            Sisa {remaining} / {base}
-                          </span>
+                          {isLimited ? (
+                            <span className={`font-black ${remaining === 0 ? "text-rose-600" : remaining <= 2 ? "text-amber-600" : "text-emerald-700"}`}>
+                              Sisa {remaining} / {base}
+                            </span>
+                          ) : (
+                            <span className="font-black text-emerald-700">
+                              Tanpa Batas Kuota (Ready)
+                            </span>
+                          )}
                         </div>
                         <div className="text-right">
                           <span className="text-[10px] text-[#7C8B9E] block uppercase font-bold">Terjual</span>
