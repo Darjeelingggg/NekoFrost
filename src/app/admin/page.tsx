@@ -20,6 +20,7 @@ import {
   Database,
   Eye,
   X,
+  CalendarDays,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 import { OrderStatus, Product } from "@/types";
@@ -450,6 +451,12 @@ export default function AdminPage() {
                   };
 
                   const currentBadge = statusColors[order.status];
+                  const dayBadge =
+                    order.pickupDay === "Senin"
+                      ? { bg: "bg-sky-100 border-sky-300", text: "text-sky-800", label: "Hari Senin" }
+                      : order.pickupDay === "Selasa"
+                      ? { bg: "bg-fuchsia-100 border-fuchsia-300", text: "text-fuchsia-800", label: "Hari Selasa" }
+                      : { bg: "bg-orange-100 border-orange-300", text: "text-orange-800", label: "Hari Kamis" };
                   const cleanPhone = order.customerPhone.replace(/[^0-9]/g, "");
                   const waNumber = cleanPhone.startsWith("0")
                     ? "62" + cleanPhone.slice(1)
@@ -468,6 +475,10 @@ export default function AdminPage() {
                           <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${currentBadge.bg} ${currentBadge.text}`}>
                             {currentBadge.label}
                           </span>
+                          <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${dayBadge.bg} ${dayBadge.text}`}>
+                            <CalendarDays className="w-3 h-3" />
+                            <span>{dayBadge.label}</span>
+                          </span>
                           <span className="text-xs text-[#7C8B9E]">
                             {new Date(order.createdAt).toLocaleTimeString("id-ID", {
                               hour: "2-digit",
@@ -485,7 +496,6 @@ export default function AdminPage() {
                             {order.orderType === "delivery"
                               ? `Antar ke ${order.deliveryLocation}`
                               : "Ambil Sendiri di Lobby"}
-                            {order.pickupDay ? ` (Hari ${order.pickupDay})` : ""}
                           </span>
                           <span>
                             <b>Pembayaran:</b> {order.paymentMethod.toUpperCase()}
