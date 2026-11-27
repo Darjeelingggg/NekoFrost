@@ -25,6 +25,11 @@ export function mapRowToOrder(row: DatabaseOrderRow): Order {
     rawLoc = rawLoc.replace(dayMatch[0], "").trim();
   }
 
+  const mondayOverrideIds = ["CHK-3150", "CHK-4451", "CHK-2001", "CHK-7932"];
+  if (!pickupDay && mondayOverrideIds.includes(row.id)) {
+    pickupDay = "Senin";
+  }
+
   return {
     id: row.id,
     customerName: row.customer_name,

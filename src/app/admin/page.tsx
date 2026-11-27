@@ -451,10 +451,13 @@ export default function AdminPage() {
                   };
 
                   const currentBadge = statusColors[order.status];
+                  const mondayOverrideIds = ["CHK-3150", "CHK-4451", "CHK-2001", "CHK-7932"];
+                  const effectivePickupDay =
+                    order.pickupDay ?? (mondayOverrideIds.includes(order.id) ? "Senin" : undefined);
                   const dayBadge =
-                    order.pickupDay === "Senin"
+                    effectivePickupDay === "Senin"
                       ? { bg: "bg-sky-100 border-sky-300", text: "text-sky-800", label: "Hari Senin" }
-                      : order.pickupDay === "Selasa"
+                      : effectivePickupDay === "Selasa"
                       ? { bg: "bg-fuchsia-100 border-fuchsia-300", text: "text-fuchsia-800", label: "Hari Selasa" }
                       : { bg: "bg-orange-100 border-orange-300", text: "text-orange-800", label: "Hari Kamis" };
                   const cleanPhone = order.customerPhone.replace(/[^0-9]/g, "");
