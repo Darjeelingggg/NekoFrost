@@ -89,6 +89,9 @@ export default function AdminPage() {
   type AdminDisplayOrder = Omit<(typeof orders)[number], "pickupDay"> & {
     pickupDay?: "Senin" | "Selasa" | "Kamis";
     isOffline?: boolean;
+    refundAmount?: number;
+    refundNote?: string;
+    originalTotalPrice?: number;
   };
 
   const offlineThursdayOrders: AdminDisplayOrder[] = [
@@ -138,8 +141,20 @@ export default function AdminPage() {
     },
   ];
 
-  // Sisipkan 2 pesanan offline Kamis tepat setelah #CHK-2001
-  const combinedOrders: AdminDisplayOrder[] = [...orders];
+  // Sisipkan 2 pesanan offline Kamis tepat setelah #CHK-2001 & terapkan penyesuaian refund
+  const combinedOrders: AdminDisplayOrder[] = orders.map((o) => {
+    if (o.id === "CHK-8675") {
+      const refundAmount = 7000;
+      return {
+        ...o,
+        originalTotalPrice: o.totalPrice,
+        totalPrice: Math.max(0, o.totalPrice - refundAmount),
+        refundAmount,
+        refundNote: "Refund Rp 7.000 di bagian Boneless Chichick",
+      };
+    }
+    return o;
+  });
   const chk2001Idx = combinedOrders.findIndex((o) => o.id === "CHK-2001");
   if (chk2001Idx !== -1) {
     combinedOrders.splice(chk2001Idx + 1, 0, ...offlineThursdayOrders);
@@ -658,16 +673,31 @@ export default function AdminPage() {
                         </div>
 
                         <div className="bg-[#FAF8F2] p-2.5 rounded-xl border border-[#E8E3D8] text-xs space-y-1">
-                          {order.items.map((i, idx) => (
-                            <div key={idx} className="flex justify-between text-[#445366]">
-                              <span>
-                                {i.quantity}x {i.productName}
-                              </span>
-                              <span className="font-bold text-[#1E447C]">
-                                Rp {(i.price * i.quantity).toLocaleString("id-ID")}
-                              </span>
+                          {order.items.map((i, idx) => {
+                            const isRefundedBoneless =
+                              Boolean(order.refundAmount) &&
+                              i.productName.toLowerCase().includes("boneless");
+                            return (
+                              <div key={idx} className="flex justify-between text-[#445366] gap-2">
+                                <span>
+                                  {i.quantity}x {i.productName}
+                                  {isRefundedBoneless && (
+                                    <span className="ml-1.5 inline-block text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-200">
+                                      Refund -Rp {order.refundAmount!.toLocaleString("id-ID")}
+                                    </span>
+                                  )}
+                                </span>
+                                <span className="font-bold text-[#1E447C] whitespace-nowrap">
+                                  Rp {(i.price * i.quantity).toLocaleString("id-ID")}
+                                </span>
+                              </div>
+                            );
+                          })}
+                          {order.refundNote && (
+                            <div className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-1.5 rounded-lg border border-rose-200 mt-1">
+                              Note Refund: {order.refundNote} (Total jadi Rp {order.totalPrice.toLocaleString("id-ID")})
                             </div>
-                          ))}
+                          )}
                           {order.notes && (
                             <p className="text-[11px] text-[#2B5EA9] italic pt-1 border-t border-[#E8E3D8]">
                               Catatan: &ldquo;{order.notes}&rdquo;
@@ -679,6 +709,11 @@ export default function AdminPage() {
                       <div className="flex flex-col sm:flex-row md:flex-col items-start sm:items-center md:items-end gap-2.5 flex-shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-[#EFEBE1]">
                         <div className="text-left md:text-right">
                           <span className="text-[11px] text-[#7C8B9E] block font-medium">Total Transaksi</span>
+                          {order.originalTotalPrice !== undefined && (
+                            <span className="text-xs text-[#8C9BAE] line-through block">
+                              Rp {order.originalTotalPrice.toLocaleString("id-ID")}
+                            </span>
+                          )}
                           <span className="text-base font-bold text-[#1E447C]">
                             Rp {order.totalPrice.toLocaleString("id-ID")}
                           </span>
