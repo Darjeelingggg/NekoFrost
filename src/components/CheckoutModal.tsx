@@ -208,10 +208,10 @@ export default function CheckoutModal() {
             </div>
 
             <div className="divide-y divide-[#EFEBE1] max-h-48 overflow-y-auto pr-1">
-              {cart.map((item) => {
+              {cart.map((item, idx) => {
                 const itemSubtotal = item.product.price * item.quantity;
                 return (
-                  <div key={item.product.id} className="py-2.5 first:pt-1 last:pb-1 flex items-start justify-between gap-3">
+                  <div key={`${item.product.id}__${item.selectedVariant || idx}`} className="py-2.5 first:pt-1 last:pb-1 flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-bold text-[#1E447C] leading-snug">
                         {item.quantity}x {item.product.name}

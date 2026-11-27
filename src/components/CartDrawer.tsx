@@ -122,10 +122,11 @@ export default function CartDrawer() {
               const remaining = getProductStock(item.product.id);
               const isLimited = hasStockLimit(item.product.id);
               const exceedsStock = isLimited && item.quantity > remaining;
+              const itemKey = `${item.product.id}__${item.selectedVariant || ""}`;
 
               return (
                 <div
-                  key={item.product.id}
+                  key={itemKey}
                   style={{
                     animation: mounted && !animatingOut ? "itemCardSlideIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) backwards" : undefined,
                     animationDelay: `${idx * 60}ms`,
@@ -171,7 +172,7 @@ export default function CartDrawer() {
                       {/* Quantity Stepper */}
                       <div className="flex items-center border border-[#D0D9E6] rounded-full px-2 py-0.5 bg-[#F8FAFC]">
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                          onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariant)}
                           className="p-1 text-[#2B5EA9] hover:text-[#EBA9B5] transition-colors active:scale-80"
                           aria-label="Kurangi"
                         >
@@ -181,7 +182,7 @@ export default function CartDrawer() {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.selectedVariant)}
                           disabled={isLimited && item.quantity >= remaining}
                           className="p-1 text-[#2B5EA9] hover:text-[#EBA9B5] transition-colors active:scale-80 disabled:opacity-30"
                           aria-label="Tambah"
@@ -199,7 +200,7 @@ export default function CartDrawer() {
 
                   {/* Delete Trash Button */}
                   <button
-                    onClick={() => removeFromCart(item.product.id)}
+                    onClick={() => removeFromCart(item.product.id, item.selectedVariant)}
                     className="absolute top-3.5 right-3.5 p-1.5 rounded-full text-[#A6B8D0] hover:text-rose-600 hover:bg-rose-50 transition-colors"
                     title="Hapus dari keranjang"
                   >

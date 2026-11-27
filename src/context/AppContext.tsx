@@ -15,9 +15,15 @@ interface AppContextType {
   products: Product[];
   setProducts: React.Dispatch<React.SetStateAction<Product[]>>;
   cart: CartItem[];
-  addToCart: (product: Product, quantity?: number, notes?: string) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  addToCart: (
+    product: Product,
+    quantity?: number,
+    notes?: string,
+    selectedVariant?: string,
+    customPrice?: number
+  ) => void;
+  removeFromCart: (productId: string, selectedVariant?: string) => void;
+  updateQuantity: (productId: string, quantity: number, selectedVariant?: string) => void;
   clearCart: () => void;
   cartTotal: number;
   cartCount: number;
@@ -485,15 +491,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return { valid: true };
   };
 
-  const addToCart = (product: Product, quantity = 1, notes = "") => {
-    const existing = cart.find((item) => item.product.id === product.id);
+  const addToCart = (
+    product: Product,
+    quantity = 1,
+    notes = "",
+    selectedVariant = "",
+    customPrice?: number
+  ) => {
+    const effectiveProduct =
+      customPrice !== undefined || selectedVariant
+        ? {
+            ...product,
+            price: customPrice ?? product.price,
+            name: selectedVariant ? `${product.name} (${selectedVariant})` : product.name,
+          }
+        : product;
+
+    const existing = cart.find(
+      (item) =>
+        item.product.id === product.id &&
+        (item.selectedVariant || "") === selectedVariant
+    );
     const candidateCart = existing
       ? cart.map((item) =>
-          item.product.id === product.id
-            ? { ...item, quantity: item.quantity + quantity, notes: notes || item.notes }
+          item.product.id === product.id &&
+          (item.selectedVariant || "") === selectedVariant
+            ? {
+                ...item,
+                quantity: item.quantity + quantity,
+                notes: notes || item.notes,
+              }
             : item
         )
-      : [...cart, { product, quantity, notes }];
+      : [...cart, { product: effectiveProduct, quantity, notes, selectedVariant }];
 
     const validation = validateCartAgainstStock(
       candidateCart.map((i) => ({ productId: i.product.id, quantity: i.quantity }))
@@ -507,21 +537,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     setCart(candidateCart);
-    showToast(`${quantity}x ${product.name} dimasukkan ke keranjang!`);
+    showToast(`${quantity}x ${effectiveProduct.name} dimasukkan ke keranjang!`);
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart((prev) => prev.filter((item) => item.product.id !== productId));
+  const removeFromCart = (productId: string, selectedVariant = "") => {
+    setCart((prev) =>
+      prev.filter(
+        (item) =>
+          !(
+            item.product.id === productId &&
+            (item.selectedVariant || "") === selectedVariant
+          )
+      )
+    );
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (
+    productId: string,
+    quantity: number,
+    selectedVariant = ""
+  ) => {
     if (quantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(productId, selectedVariant);
       return;
     }
 
     const candidateCart = cart.map((item) =>
-      item.product.id === productId ? { ...item, quantity } : item
+      item.product.id === productId &&
+      (item.selectedVariant || "") === selectedVariant
+        ? { ...item, quantity }
+        : item
     );
 
     const validation = validateCartAgainstStock(

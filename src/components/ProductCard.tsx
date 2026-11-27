@@ -22,7 +22,10 @@ export default function ProductCard({ product }: ProductCardProps) {
   const isPngGraphic =
     product.image.endsWith(".png") || product.image.includes("yuzu-cup");
 
-  const cartItem = cart.find((item) => item.product.id === product.id);
+  const cartQty = cart
+    .filter((item) => item.product.id === product.id)
+    .reduce((sum, item) => sum + item.quantity, 0);
+  const hasBonelessOptions = ["chk-ori", "chk-keju", "chk-kentang", "pkt-hemat", "pkt-komplit"].includes(product.id);
   const isLiked = likedProductIds.includes(product.id);
   const likesCount = (product.likes || 120) + (isLiked ? 1 : 0);
 
@@ -63,10 +66,10 @@ export default function ProductCard({ product }: ProductCardProps) {
             </span>
           )}
 
-          {cartItem && (
+          {cartQty > 0 && (
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EAF2FD] text-[#2B5EA9] border border-[#CBDDF7] flex items-center gap-1">
               <ShoppingBag className="w-2.5 h-2.5" />
-              <span>x{cartItem.quantity}</span>
+              <span>x{cartQty}</span>
             </span>
           )}
         </div>
@@ -148,7 +151,11 @@ export default function ProductCard({ product }: ProductCardProps) {
             onClick={(e) => {
               e.stopPropagation();
               if (isAvailable) {
-                addToCart(product, 1);
+                if (hasBonelessOptions) {
+                  setSelectedProduct(product);
+                } else {
+                  addToCart(product, 1);
+                }
               }
             }}
             disabled={!isAvailable}

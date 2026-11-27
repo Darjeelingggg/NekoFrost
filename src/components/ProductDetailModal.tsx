@@ -1,18 +1,35 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { ArrowLeft, Heart, Minus, Plus, Check } from "lucide-react";
 import { useApp } from "@/context/AppContext";
+
+const BONELESS_SEASONING_IDS = ["chk-ori", "chk-keju", "chk-kentang", "pkt-hemat", "pkt-komplit"];
+const BONELESS_CHEESE_ADDON_IDS = ["chk-ori", "chk-kentang", "pkt-hemat"];
+const SEASONING_OPTIONS = ["Barbeque", "Balado", "Seaweed"] as const;
 
 export default function ProductDetailModal() {
   const { selectedProduct, setSelectedProduct, addToCart, getProductStock, isProductAvailable, hasStockLimit } = useApp();
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
+  const [seasoning, setSeasoning] = useState<string>("");
+  const [addCheeseAddon, setAddCheeseAddon] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [addedAnimation, setAddedAnimation] = useState(false);
 
+  useEffect(() => {
+    setQuantity(1);
+    setNotes("");
+    setSeasoning("");
+    setAddCheeseAddon(false);
+  }, [selectedProduct?.id]);
+
   if (!selectedProduct) return null;
+
+  const hasSeasoningChoice = BONELESS_SEASONING_IDS.includes(selectedProduct.id);
+  const canAddCheese = BONELESS_CHEESE_ADDON_IDS.includes(selectedProduct.id);
+  const unitPrice = selectedProduct.price + (canAddCheese && addCheeseAddon ? 2000 : 0);
 
   const isLimited = hasStockLimit(selectedProduct.id);
   const remaining = getProductStock(selectedProduct.id);
@@ -23,10 +40,23 @@ export default function ProductDetailModal() {
     setSelectedProduct(null);
     setQuantity(1);
     setNotes("");
+    setSeasoning("");
+    setAddCheeseAddon(false);
   };
 
   const handleAddToCart = () => {
-    addToCart(selectedProduct, quantity, notes);
+    if (hasSeasoningChoice && !seasoning) {
+      alert("Mohon pilih bumbu tabur terlebih dahulu (Barbeque, Balado, atau Seaweed).");
+      return;
+    }
+
+    const variantLabel = hasSeasoningChoice
+      ? canAddCheese && addCheeseAddon
+        ? `${seasoning} + Add-on Saus Keju`
+        : seasoning
+      : "";
+
+    addToCart(selectedProduct, quantity, notes, variantLabel, unitPrice);
     setAddedAnimation(true);
     setTimeout(() => {
       setAddedAnimation(false);
@@ -38,7 +68,7 @@ export default function ProductDetailModal() {
     style: "currency",
     currency: "IDR",
     maximumFractionDigits: 0,
-  }).format(selectedProduct.price * quantity);
+  }).format(unitPrice * quantity);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
@@ -148,6 +178,60 @@ export default function ProductDetailModal() {
               {selectedProduct.ingredients}
             </p>
           </div>
+
+          {/* Pilihan Bumbu Tabur (Khusus Boneless Chichick & Paket Ayam) */}
+          {hasSeasoningChoice && (
+            <div className="mb-3.5">
+              <label className="block text-[10px] font-bold text-[#EBA9B5] uppercase tracking-wider mb-1.5">
+                Pilih Bumbu Tabur (Wajib) *
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {SEASONING_OPTIONS.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setSeasoning(opt)}
+                    className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all ${
+                      seasoning === opt
+                        ? "bg-[#EBA9B5] text-[#1E447C] border-[#EBA9B5] shadow-sm"
+                        : "bg-[#14325C] text-[#EAF2FD] border-[#2E5894] hover:border-[#EBA9B5]/60"
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Add-on Saus Keju (+Rp 2.000) */}
+          {canAddCheese && (
+            <div className="mb-3.5">
+              <button
+                type="button"
+                onClick={() => setAddCheeseAddon((prev) => !prev)}
+                className={`w-full p-2.5 rounded-xl border flex items-center justify-between transition-all text-left ${
+                  addCheeseAddon
+                    ? "bg-[#EBA9B5]/20 border-[#EBA9B5] text-white"
+                    : "bg-[#14325C] border-[#2E5894] text-[#C8DCF7] hover:border-[#EBA9B5]/50"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`w-4 h-4 rounded flex items-center justify-center border ${
+                      addCheeseAddon
+                        ? "bg-[#EBA9B5] border-[#EBA9B5] text-[#1E447C]"
+                        : "border-[#5B82B8]"
+                    }`}
+                  >
+                    {addCheeseAddon && <Check className="w-3 h-3 stroke-[3]" />}
+                  </div>
+                  <span className="text-xs font-bold">Add-on Saus Keju Creamy</span>
+                </div>
+                <span className="text-xs font-black text-[#EBA9B5]">+Rp 2.000</span>
+              </button>
+            </div>
+          )}
 
           {/* Notes Input */}
           <div className="mb-4">
