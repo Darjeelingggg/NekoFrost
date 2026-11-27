@@ -53,6 +53,7 @@ export default function AdminPage() {
   } | null>(null);
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [dayFilter, setDayFilter] = useState<"all" | "Kamis" | "Senin" | "Selasa">("all");
   const [activeTab, setActiveTab] = useState<"orders" | "products">("orders");
 
   // New product modal state
@@ -78,8 +79,80 @@ export default function AdminPage() {
     }
   };
 
-  const totalRevenue = orders
-    .filter((o) => o.status !== "cancelled")
+  const mondayOverrideIds = ["CHK-3150", "CHK-4451", "CHK-2001", "CHK-7932"];
+  const getOrderDay = (order: { id: string; pickupDay?: "Senin" | "Selasa" | "Kamis" }): "Senin" | "Selasa" | "Kamis" => {
+    if (order.pickupDay) return order.pickupDay;
+    if (mondayOverrideIds.includes(order.id)) return "Senin";
+    return "Kamis";
+  };
+
+  type AdminDisplayOrder = Omit<(typeof orders)[number], "pickupDay"> & {
+    pickupDay?: "Senin" | "Selasa" | "Kamis";
+    isOffline?: boolean;
+  };
+
+  const offlineThursdayOrders: AdminDisplayOrder[] = [
+    {
+      id: "OFFLINE-KAMIS-1",
+      customerName: "Pembeli Offline 1 (Langsung di Tempat)",
+      customerPhone: "-",
+      orderType: "pickup",
+      pickupDay: "Kamis",
+      deliveryLocation: "Pembelian Offline (Tidak Lewat Website)",
+      notes: "Penjualan offline hari Kamis: Boneless Chichick Rp 20.000",
+      items: [
+        {
+          productId: "chk-offline",
+          productName: "Boneless Chichick (Offline)",
+          price: 20000,
+          quantity: 1,
+        },
+      ],
+      totalPrice: 20000,
+      paymentMethod: "cash",
+      status: "completed",
+      createdAt: "2026-11-26T13:14:00+07:00",
+      isOffline: true,
+    },
+    {
+      id: "OFFLINE-KAMIS-2",
+      customerName: "Pembeli Offline 2 (Langsung di Tempat)",
+      customerPhone: "-",
+      orderType: "pickup",
+      pickupDay: "Kamis",
+      deliveryLocation: "Pembelian Offline (Tidak Lewat Website)",
+      notes: "Penjualan offline hari Kamis: 2x Risol Coklat Rp 10.000",
+      items: [
+        {
+          productId: "rsl-coklat-keju",
+          productName: "Risol Coklat Keju (Offline)",
+          price: 5000,
+          quantity: 2,
+        },
+      ],
+      totalPrice: 10000,
+      paymentMethod: "cash",
+      status: "completed",
+      createdAt: "2026-11-26T13:13:00+07:00",
+      isOffline: true,
+    },
+  ];
+
+  // Sisipkan 2 pesanan offline Kamis tepat setelah #CHK-2001
+  const combinedOrders: AdminDisplayOrder[] = [...orders];
+  const chk2001Idx = combinedOrders.findIndex((o) => o.id === "CHK-2001");
+  if (chk2001Idx !== -1) {
+    combinedOrders.splice(chk2001Idx + 1, 0, ...offlineThursdayOrders);
+  } else {
+    combinedOrders.push(...offlineThursdayOrders);
+  }
+
+  const totalRevenue = combinedOrders
+    .filter(
+      (o) =>
+        o.status !== "cancelled" &&
+        (dayFilter === "all" || getOrderDay(o) === dayFilter)
+    )
     .reduce((sum, o) => sum + o.totalPrice, 0);
 
   const pendingOrders = orders.filter((o) => o.status === "pending" || o.status === "cooking");
@@ -90,9 +163,10 @@ export default function AdminPage() {
     maximumFractionDigits: 0,
   }).format(totalRevenue);
 
-  const filteredOrders = orders.filter((o) => {
-    if (statusFilter === "all") return true;
-    return o.status === statusFilter;
+  const filteredOrders = combinedOrders.filter((o) => {
+    const matchStatus = statusFilter === "all" || o.status === statusFilter;
+    const matchDay = dayFilter === "all" || getOrderDay(o) === dayFilter;
+    return matchStatus && matchDay;
   });
 
   const handleExportCSV = () => {
@@ -341,8 +415,31 @@ export default function AdminPage() {
               {formattedRevenue}
             </span>
             <span className="text-[10px] text-emerald-600 block mt-1 font-semibold">
-              Omzet Penjualan Aktif
+              {dayFilter === "all" ? "Semua Hari (Online + Offline)" : `Khusus Hari ${dayFilter}`}
             </span>
+            <div className="flex items-center gap-1 flex-wrap mt-2.5 pt-2 border-t border-[#EFEBE1]">
+              {(
+                [
+                  { id: "all", label: "Semua" },
+                  { id: "Kamis", label: "Kamis" },
+                  { id: "Senin", label: "Senin" },
+                  { id: "Selasa", label: "Selasa" },
+                ] as const
+              ).map((d) => (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setDayFilter(d.id)}
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors ${
+                    dayFilter === d.id
+                      ? "bg-[#2B5EA9] text-white"
+                      : "bg-[#F8FAFC] text-[#67778E] border border-[#E2DDD0] hover:bg-[#EAF2FD]"
+                  }`}
+                >
+                  {d.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="bg-white p-4 rounded-2xl border border-[#E2DDD0] shadow-sm">
@@ -411,26 +508,57 @@ export default function AdminPage() {
         {/* TAB 1: ORDERS MANAGEMENT */}
         {activeTab === "orders" && (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-              {[
-                { id: "all", label: "Semua" },
-                { id: "pending", label: "Menunggu" },
-                { id: "cooking", label: "Sedang Dimasak" },
-                { id: "ready", label: "Siap Diambil/Antar" },
-                { id: "completed", label: "Selesai" },
-                { id: "cancelled", label: "Dibatalkan" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setStatusFilter(tab.id)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${statusFilter === tab.id
-                    ? "bg-[#2B5EA9] text-white font-bold"
-                    : "bg-white text-[#67778E] border border-[#E2DDD0] hover:bg-[#F8FAFC]"
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+                {[
+                  { id: "all", label: "Semua" },
+                  { id: "pending", label: "Menunggu" },
+                  { id: "cooking", label: "Sedang Dimasak" },
+                  { id: "ready", label: "Siap Diambil/Antar" },
+                  { id: "completed", label: "Selesai" },
+                  { id: "cancelled", label: "Dibatalkan" },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setStatusFilter(tab.id)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${statusFilter === tab.id
+                      ? "bg-[#2B5EA9] text-white font-bold"
+                      : "bg-white text-[#67778E] border border-[#E2DDD0] hover:bg-[#F8FAFC]"
+                      }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Filter Hari */}
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                <span className="text-[11px] font-bold text-[#7C8B9E] flex items-center gap-1 whitespace-nowrap">
+                  <CalendarDays className="w-3.5 h-3.5 text-[#2B5EA9]" />
+                  <span>Filter Hari:</span>
+                </span>
+                {(
+                  [
+                    { id: "all", label: "Semua Hari", activeClass: "bg-[#1E447C] text-white border-[#1E447C]" },
+                    { id: "Kamis", label: "Hari Kamis", activeClass: "bg-orange-500 text-white border-orange-500" },
+                    { id: "Senin", label: "Hari Senin", activeClass: "bg-sky-600 text-white border-sky-600" },
+                    { id: "Selasa", label: "Hari Selasa", activeClass: "bg-fuchsia-600 text-white border-fuchsia-600" },
+                  ] as const
+                ).map((d) => (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => setDayFilter(d.id)}
+                    className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap border transition-colors ${
+                      dayFilter === d.id
+                        ? d.activeClass
+                        : "bg-white text-[#67778E] border-[#E2DDD0] hover:bg-[#F8FAFC]"
                     }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {filteredOrders.length === 0 ? (
@@ -451,15 +579,13 @@ export default function AdminPage() {
                   };
 
                   const currentBadge = statusColors[order.status];
-                  const mondayOverrideIds = ["CHK-3150", "CHK-4451", "CHK-2001", "CHK-7932"];
-                  const effectivePickupDay =
-                    order.pickupDay ?? (mondayOverrideIds.includes(order.id) ? "Senin" : undefined);
+                  const effectivePickupDay = getOrderDay(order);
                   const dayBadge =
                     effectivePickupDay === "Senin"
                       ? { bg: "bg-sky-100 border-sky-300", text: "text-sky-800", label: "Hari Senin" }
                       : effectivePickupDay === "Selasa"
-                      ? { bg: "bg-fuchsia-100 border-fuchsia-300", text: "text-fuchsia-800", label: "Hari Selasa" }
-                      : { bg: "bg-orange-100 border-orange-300", text: "text-orange-800", label: "Hari Kamis" };
+                        ? { bg: "bg-fuchsia-100 border-fuchsia-300", text: "text-fuchsia-800", label: "Hari Selasa" }
+                        : { bg: "bg-orange-100 border-orange-300", text: "text-orange-800", label: "Hari Kamis" };
                   const cleanPhone = order.customerPhone.replace(/[^0-9]/g, "");
                   const waNumber = cleanPhone.startsWith("0")
                     ? "62" + cleanPhone.slice(1)
@@ -468,13 +594,22 @@ export default function AdminPage() {
                   return (
                     <div
                       key={order.id}
-                      className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2DDD0] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
+                      className={`rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                        order.isOffline
+                          ? "bg-gradient-to-r from-amber-50 to-[#FAF6E8] border-2 border-dashed border-amber-400"
+                          : "bg-white border border-[#E2DDD0]"
+                      }`}
                     >
                       <div className="space-y-2 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-mono font-bold text-[#2B5EA9]">
+                          <span className={`text-sm font-mono font-bold ${order.isOffline ? "text-amber-800" : "text-[#2B5EA9]"}`}>
                             #{order.id}
                           </span>
+                          {order.isOffline && (
+                            <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-amber-500 text-white shadow-xs">
+                              OFFLINE • NON-WEB
+                            </span>
+                          )}
                           <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${currentBadge.bg} ${currentBadge.text}`}>
                             {currentBadge.label}
                           </span>
@@ -550,41 +685,49 @@ export default function AdminPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <select
-                            value={order.status}
-                            onChange={(e) =>
-                              updateOrderStatus(order.id, e.target.value as OrderStatus)
-                            }
-                            className="text-xs font-bold px-3 py-1.5 rounded-xl border border-[#CBD7E8] bg-[#F4F8FC] text-[#1E447C] focus:outline-none focus:ring-2 focus:ring-[#2B5EA9]"
-                          >
-                            <option value="pending">Menunggu Konfirmasi</option>
-                            <option value="cooking">Sedang Dimasak</option>
-                            <option value="ready">Siap Diambil/Antar</option>
-                            <option value="completed">Selesai (Lunas)</option>
-                            <option value="cancelled">Dibatalkan</option>
-                          </select>
+                          {order.isOffline ? (
+                            <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-amber-100 text-amber-900 border border-amber-300">
+                              Penjualan Offline • Lunas
+                            </span>
+                          ) : (
+                            <>
+                              <select
+                                value={order.status}
+                                onChange={(e) =>
+                                  updateOrderStatus(order.id, e.target.value as OrderStatus)
+                                }
+                                className="text-xs font-bold px-3 py-1.5 rounded-xl border border-[#CBD7E8] bg-[#F4F8FC] text-[#1E447C] focus:outline-none focus:ring-2 focus:ring-[#2B5EA9]"
+                              >
+                                <option value="pending">Menunggu Konfirmasi</option>
+                                <option value="cooking">Sedang Dimasak</option>
+                                <option value="ready">Siap Diambil/Antar</option>
+                                <option value="completed">Selesai (Lunas)</option>
+                                <option value="cancelled">Dibatalkan</option>
+                              </select>
 
-                          <a
-                            href={`https://wa.me/${waNumber}?text=Halo%20kak%20${encodeURIComponent(order.customerName)},%20kami%20dari%20NekoFrost%20ingin%20mengonfirmasi%20pesanan%20%23${order.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm"
-                            title="Chat WhatsApp Pembeli"
-                          >
-                            <Phone className="w-4 h-4" />
-                          </a>
+                              <a
+                                href={`https://wa.me/${waNumber}?text=Halo%20kak%20${encodeURIComponent(order.customerName)},%20kami%20dari%20NekoFrost%20ingin%20mengonfirmasi%20pesanan%20%23${order.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm"
+                                title="Chat WhatsApp Pembeli"
+                              >
+                                <Phone className="w-4 h-4" />
+                              </a>
 
-                          <button
-                            onClick={() => {
-                              if (confirm(`Hapus pesanan #${order.id} dari ${order.customerName}?`)) {
-                                deleteOrder(order.id);
-                              }
-                            }}
-                            className="p-1.5 rounded-xl bg-neutral-100 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                            title="Hapus Pesanan"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                              <button
+                                onClick={() => {
+                                  if (confirm(`Hapus pesanan #${order.id} dari ${order.customerName}?`)) {
+                                    deleteOrder(order.id);
+                                  }
+                                }}
+                                className="p-1.5 rounded-xl bg-neutral-100 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                                title="Hapus Pesanan"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>

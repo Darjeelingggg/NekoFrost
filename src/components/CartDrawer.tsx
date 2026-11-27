@@ -17,6 +17,9 @@ export default function CartDrawer() {
     getProductStock,
     hasStockLimit,
     validateCartAgainstStock,
+    products,
+    setSelectedProduct,
+    setEditingCartItem,
   } = useApp();
 
   const [mounted, setMounted] = useState(false);
@@ -127,11 +130,16 @@ export default function CartDrawer() {
               return (
                 <div
                   key={itemKey}
+                  onClick={() => {
+                    const baseProduct = products.find((p) => p.id === item.product.id) || item.product;
+                    setEditingCartItem(item);
+                    setSelectedProduct(baseProduct);
+                  }}
                   style={{
                     animation: mounted && !animatingOut ? "itemCardSlideIn 0.38s cubic-bezier(0.16, 1, 0.3, 1) backwards" : undefined,
                     animationDelay: `${idx * 60}ms`,
                   }}
-                  className={`bg-white rounded-3xl p-4 border shadow-sm hover:shadow-md transition-all flex items-center gap-3.5 relative ${
+                  className={`bg-white rounded-3xl p-4 border shadow-sm hover:shadow-md hover:border-[#2B5EA9]/50 transition-all flex items-center gap-3.5 relative cursor-pointer ${
                     exceedsStock ? "border-rose-400 bg-rose-50/30" : "border-[#E2DDD0]"
                   }`}
                 >
@@ -148,11 +156,11 @@ export default function CartDrawer() {
 
                   {/* Info Column */}
                   <div className="flex-1 min-w-0 pr-6">
-                    <h4 className="text-xs sm:text-sm font-bold text-[#1E447C] truncate leading-tight">
+                    <h4 className="text-xs sm:text-sm font-bold text-[#1E447C] leading-tight">
                       {item.product.name}
                     </h4>
                     <p className="text-[11px] text-[#7C8B9E] mt-0.5">
-                      Rp {item.product.price.toLocaleString("id-ID")} / porsi
+                      Rp {item.product.price.toLocaleString("id-ID")} / porsi • <span className="text-[#2B5EA9] font-semibold">Ketuk untuk ubah</span>
                     </p>
 
                     {exceedsStock && (
@@ -170,7 +178,10 @@ export default function CartDrawer() {
                     {/* Stepper & Subtotal Row */}
                     <div className="flex items-center justify-between mt-2.5">
                       {/* Quantity Stepper */}
-                      <div className="flex items-center border border-[#D0D9E6] rounded-full px-2 py-0.5 bg-[#F8FAFC]">
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center border border-[#D0D9E6] rounded-full px-2 py-0.5 bg-[#F8FAFC]"
+                      >
                         <button
                           onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.selectedVariant)}
                           className="p-1 text-[#2B5EA9] hover:text-[#EBA9B5] transition-colors active:scale-80"
@@ -200,7 +211,10 @@ export default function CartDrawer() {
 
                   {/* Delete Trash Button */}
                   <button
-                    onClick={() => removeFromCart(item.product.id, item.selectedVariant)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeFromCart(item.product.id, item.selectedVariant);
+                    }}
                     className="absolute top-3.5 right-3.5 p-1.5 rounded-full text-[#A6B8D0] hover:text-rose-600 hover:bg-rose-50 transition-colors"
                     title="Hapus dari keranjang"
                   >

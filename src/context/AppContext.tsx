@@ -24,6 +24,16 @@ interface AppContextType {
   ) => void;
   removeFromCart: (productId: string, selectedVariant?: string) => void;
   updateQuantity: (productId: string, quantity: number, selectedVariant?: string) => void;
+  updateCartItem: (
+    oldProductId: string,
+    oldSelectedVariant: string,
+    updated: {
+      quantity: number;
+      notes: string;
+      selectedVariant: string;
+      customPrice: number;
+    }
+  ) => void;
   clearCart: () => void;
   cartTotal: number;
   cartCount: number;
@@ -31,6 +41,8 @@ interface AppContextType {
   // Modals & Navigation
   selectedProduct: Product | null;
   setSelectedProduct: (product: Product | null) => void;
+  editingCartItem: CartItem | null;
+  setEditingCartItem: (item: CartItem | null) => void;
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
   isCheckoutOpen: boolean;
@@ -165,6 +177,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [editingCartItem, setEditingCartItem] = useState<CartItem | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [latestOrder, setLatestOrder] = useState<Order | null>(null);
@@ -583,6 +596,54 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setCart(candidateCart);
   };
 
+  const updateCartItem = (
+    oldProductId: string,
+    oldSelectedVariant: string,
+    updated: {
+      quantity: number;
+      notes: string;
+      selectedVariant: string;
+      customPrice: number;
+    }
+  ) => {
+    const baseProduct = products.find((p) => p.id === oldProductId);
+    if (!baseProduct) return;
+
+    const effectiveProduct: Product = {
+      ...baseProduct,
+      price: updated.customPrice,
+      name: updated.selectedVariant
+        ? `${baseProduct.name} (${updated.selectedVariant})`
+        : baseProduct.name,
+    };
+
+    const candidateCart = cart.map((item) =>
+      item.product.id === oldProductId &&
+      (item.selectedVariant || "") === oldSelectedVariant
+        ? {
+            product: effectiveProduct,
+            quantity: updated.quantity,
+            notes: updated.notes,
+            selectedVariant: updated.selectedVariant,
+          }
+        : item
+    );
+
+    const validation = validateCartAgainstStock(
+      candidateCart.map((i) => ({ productId: i.product.id, quantity: i.quantity }))
+    );
+
+    if (!validation.valid) {
+      showToast(
+        `Maaf, stok ${validation.errorItem} tidak mencukupi (sisa ${validation.remaining ?? 0} porsi).`
+      );
+      return;
+    }
+
+    setCart(candidateCart);
+    showToast(`Pilihan ${effectiveProduct.name} diperbarui!`);
+  };
+
   const clearCart = () => setCart([]);
 
   const cartTotal = cart.reduce(
@@ -685,11 +746,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addToCart,
         removeFromCart,
         updateQuantity,
+        updateCartItem,
         clearCart,
         cartTotal,
         cartCount,
         selectedProduct,
         setSelectedProduct,
+        editingCartItem,
+        setEditingCartItem,
         isCartOpen,
         setIsCartOpen,
         isCheckoutOpen,

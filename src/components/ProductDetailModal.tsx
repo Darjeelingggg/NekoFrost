@@ -10,23 +10,45 @@ const BONELESS_CHEESE_ADDON_IDS = ["chk-ori", "chk-kentang", "pkt-hemat"];
 const SEASONING_OPTIONS = ["Barbeque", "Balado", "Seaweed"] as const;
 
 export default function ProductDetailModal() {
-  const { selectedProduct, setSelectedProduct, addToCart, getProductStock, isProductAvailable, hasStockLimit } = useApp();
+  const {
+    selectedProduct,
+    setSelectedProduct,
+    editingCartItem,
+    setEditingCartItem,
+    addToCart,
+    updateCartItem,
+    getProductStock,
+    isProductAvailable,
+    hasStockLimit,
+  } = useApp();
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
-  const [seasoning, setSeasoning] = useState<string>("");
+  const [selectedSeasonings, setSelectedSeasonings] = useState<string[]>([]);
   const [addCheeseAddon, setAddCheeseAddon] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [addedAnimation, setAddedAnimation] = useState(false);
 
   useEffect(() => {
-    setQuantity(1);
-    setNotes("");
-    setSeasoning("");
-    setAddCheeseAddon(false);
-  }, [selectedProduct?.id]);
+    if (editingCartItem && selectedProduct && editingCartItem.product.id === selectedProduct.id) {
+      setQuantity(editingCartItem.quantity);
+      setNotes(editingCartItem.notes || "");
+      const variantStr = editingCartItem.selectedVariant || "";
+      const matchedSeasonings = SEASONING_OPTIONS.filter((opt) =>
+        variantStr.includes(opt)
+      );
+      setSelectedSeasonings(matchedSeasonings);
+      setAddCheeseAddon(variantStr.includes("Saus Keju"));
+    } else {
+      setQuantity(1);
+      setNotes("");
+      setSelectedSeasonings([]);
+      setAddCheeseAddon(false);
+    }
+  }, [selectedProduct?.id, editingCartItem]);
 
   if (!selectedProduct) return null;
 
+  const isEditing = Boolean(editingCartItem && editingCartItem.product.id === selectedProduct.id);
   const hasSeasoningChoice = BONELESS_SEASONING_IDS.includes(selectedProduct.id);
   const canAddCheese = BONELESS_CHEESE_ADDON_IDS.includes(selectedProduct.id);
   const unitPrice = selectedProduct.price + (canAddCheese && addCheeseAddon ? 2000 : 0);
@@ -36,27 +58,49 @@ export default function ProductDetailModal() {
   const isAvailable = isProductAvailable(selectedProduct.id);
   const maxQty = isLimited ? remaining : 99;
 
+  const toggleSeasoning = (opt: string) => {
+    setSelectedSeasonings((prev) =>
+      prev.includes(opt) ? prev.filter((s) => s !== opt) : [...prev, opt]
+    );
+  };
+
   const handleClose = () => {
     setSelectedProduct(null);
+    setEditingCartItem(null);
     setQuantity(1);
     setNotes("");
-    setSeasoning("");
+    setSelectedSeasonings([]);
     setAddCheeseAddon(false);
   };
 
   const handleAddToCart = () => {
-    if (hasSeasoningChoice && !seasoning) {
-      alert("Mohon pilih bumbu tabur terlebih dahulu (Barbeque, Balado, atau Seaweed).");
+    if (hasSeasoningChoice && selectedSeasonings.length === 0) {
+      alert("Mohon pilih minimal satu bumbu tabur (Barbeque, Balado, atau Seaweed).");
       return;
     }
 
+    const seasoningLabel = selectedSeasonings.join(", ");
     const variantLabel = hasSeasoningChoice
       ? canAddCheese && addCheeseAddon
-        ? `${seasoning} + Add-on Saus Keju`
-        : seasoning
+        ? `${seasoningLabel} + Add-on Saus Keju`
+        : seasoningLabel
       : "";
 
-    addToCart(selectedProduct, quantity, notes, variantLabel, unitPrice);
+    if (isEditing && editingCartItem) {
+      updateCartItem(
+        editingCartItem.product.id,
+        editingCartItem.selectedVariant || "",
+        {
+          quantity,
+          notes,
+          selectedVariant: variantLabel,
+          customPrice: unitPrice,
+        }
+      );
+    } else {
+      addToCart(selectedProduct, quantity, notes, variantLabel, unitPrice);
+    }
+
     setAddedAnimation(true);
     setTimeout(() => {
       setAddedAnimation(false);
@@ -71,7 +115,7 @@ export default function ProductDetailModal() {
   }).format(unitPrice * quantity);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
       {/* Modal Container */}
       <div className="relative w-full max-w-md h-full sm:h-auto sm:max-h-[92vh] sm:rounded-3xl bg-[#F1EDE1] shadow-2xl overflow-y-auto no-scrollbar flex flex-col justify-between">
         
@@ -183,23 +227,27 @@ export default function ProductDetailModal() {
           {hasSeasoningChoice && (
             <div className="mb-3.5">
               <label className="block text-[10px] font-bold text-[#EBA9B5] uppercase tracking-wider mb-1.5">
-                Pilih Bumbu Tabur (Wajib) *
+                Pilih Bumbu Tabur (Bisa Lebih Dari 1) *
               </label>
               <div className="grid grid-cols-3 gap-2">
-                {SEASONING_OPTIONS.map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => setSeasoning(opt)}
-                    className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all ${
-                      seasoning === opt
-                        ? "bg-[#EBA9B5] text-[#1E447C] border-[#EBA9B5] shadow-sm"
-                        : "bg-[#14325C] text-[#EAF2FD] border-[#2E5894] hover:border-[#EBA9B5]/60"
-                    }`}
-                  >
-                    {opt}
-                  </button>
-                ))}
+                {SEASONING_OPTIONS.map((opt) => {
+                  const isSelected = selectedSeasonings.includes(opt);
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => toggleSeasoning(opt)}
+                      className={`py-2 px-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1 ${
+                        isSelected
+                          ? "bg-[#EBA9B5] text-[#1E447C] border-[#EBA9B5] shadow-sm"
+                          : "bg-[#14325C] text-[#EAF2FD] border-[#2E5894] hover:border-[#EBA9B5]/60"
+                      }`}
+                    >
+                      {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                      <span>{opt}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -295,10 +343,10 @@ export default function ProductDetailModal() {
               {addedAnimation ? (
                 <>
                   <Check className="w-4 h-4" />
-                  <span>Masuk!</span>
+                  <span>{isEditing ? "Disimpan!" : "Masuk!"}</span>
                 </>
               ) : isAvailable ? (
-                "Order"
+                isEditing ? "Simpan" : "Order"
               ) : (
                 "Habis"
               )}
