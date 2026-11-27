@@ -485,6 +485,7 @@ export default function AdminPage() {
                             {order.orderType === "delivery"
                               ? `Antar ke ${order.deliveryLocation}`
                               : "Ambil Sendiri di Lobby"}
+                            {order.pickupDay ? ` (Hari ${order.pickupDay})` : ""}
                           </span>
                           <span>
                             <b>Pembayaran:</b> {order.paymentMethod.toUpperCase()}

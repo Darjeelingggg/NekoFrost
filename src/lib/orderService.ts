@@ -17,12 +17,21 @@ export interface DatabaseOrderRow {
 }
 
 export function mapRowToOrder(row: DatabaseOrderRow): Order {
+  let rawLoc = row.delivery_location || "";
+  let pickupDay: "Senin" | "Selasa" | undefined;
+  const dayMatch = rawLoc.match(/\s*\[Hari:\s*(Senin|Selasa)\]/i);
+  if (dayMatch) {
+    pickupDay = (dayMatch[1].charAt(0).toUpperCase() + dayMatch[1].slice(1).toLowerCase()) as "Senin" | "Selasa";
+    rawLoc = rawLoc.replace(dayMatch[0], "").trim();
+  }
+
   return {
     id: row.id,
     customerName: row.customer_name,
     customerPhone: row.customer_phone,
     orderType: row.order_type,
-    deliveryLocation: row.delivery_location || undefined,
+    pickupDay,
+    deliveryLocation: rawLoc || undefined,
     notes: row.notes || undefined,
     items: row.items,
     totalPrice: Number(row.total_price),
@@ -34,12 +43,17 @@ export function mapRowToOrder(row: DatabaseOrderRow): Order {
 }
 
 export function mapOrderToRow(order: Order): DatabaseOrderRow {
+  const baseLoc = order.deliveryLocation || (order.orderType === "pickup" ? "Ambil Sendiri di Lobby" : "");
+  const encodedLocation = order.pickupDay
+    ? `${baseLoc} [Hari: ${order.pickupDay}]`.trim()
+    : baseLoc || null;
+
   return {
     id: order.id,
     customer_name: order.customerName,
     customer_phone: order.customerPhone,
     order_type: order.orderType,
-    delivery_location: order.deliveryLocation || null,
+    delivery_location: encodedLocation,
     notes: order.notes || null,
     items: order.items,
     total_price: order.totalPrice,

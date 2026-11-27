@@ -13,6 +13,8 @@ import {
   Clock,
   UploadCloud,
   AlertCircle,
+  CalendarDays,
+  ShoppingBag,
 } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
@@ -23,6 +25,7 @@ export default function CheckoutModal() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [orderType, setOrderType] = useState<"pickup" | "delivery">("pickup");
+  const [pickupDay, setPickupDay] = useState<"Senin" | "Selasa" | "">("");
   const [deliveryLocation, setDeliveryLocation] = useState("");
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"qris" | "transfer" | "cash">("qris");
@@ -113,6 +116,10 @@ export default function CheckoutModal() {
       alert("Mohon isi nama dan nomor WhatsApp Anda.");
       return;
     }
+    if (!pickupDay) {
+      alert("Mohon pilih hari pengambilan terlebih dahulu (Senin atau Selasa).");
+      return;
+    }
     if (orderType === "delivery" && !deliveryLocation.trim()) {
       alert("Mohon cantumkan lokasi pengantaran (Kelas/Lantai/Lobby).");
       return;
@@ -145,6 +152,7 @@ export default function CheckoutModal() {
         customerName,
         customerPhone,
         orderType,
+        pickupDay,
         deliveryLocation: orderType === "delivery" ? deliveryLocation : "Ambil Sendiri di Lobby",
         notes,
         items: cart.map((item) => ({
@@ -187,6 +195,50 @@ export default function CheckoutModal() {
         </div>
 
         <form onSubmit={handleSubmitOrder} className="p-6 space-y-5">
+          {/* Ringkasan Barang yang Akan Dibayar */}
+          <div className="bg-white rounded-2xl p-4 border border-[#E2DDD0] space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-[#1E447C] uppercase tracking-wider flex items-center gap-1.5">
+                <ShoppingBag className="w-4 h-4 text-[#2B5EA9]" />
+                <span>Daftar Barang yang Dibayar</span>
+              </h3>
+              <span className="text-[11px] font-bold text-[#2B5EA9] bg-[#EAF2FD] px-2.5 py-0.5 rounded-full">
+                {cart.reduce((s, i) => s + i.quantity, 0)} porsi
+              </span>
+            </div>
+
+            <div className="divide-y divide-[#EFEBE1] max-h-48 overflow-y-auto pr-1">
+              {cart.map((item) => {
+                const itemSubtotal = item.product.price * item.quantity;
+                return (
+                  <div key={item.product.id} className="py-2.5 first:pt-1 last:pb-1 flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-[#1E447C] leading-snug">
+                        {item.quantity}x {item.product.name}
+                      </p>
+                      <p className="text-[11px] text-[#7C8B9E]">
+                        @ Rp {item.product.price.toLocaleString("id-ID")}
+                      </p>
+                      {item.notes && (
+                        <p className="text-[10px] text-[#2B5EA9] italic mt-0.5 truncate">
+                          Catatan: &ldquo;{item.notes}&rdquo;
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-xs font-bold text-[#1E447C] whitespace-nowrap">
+                      Rp {itemSubtotal.toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="pt-2.5 border-t border-[#E2DDD0] flex items-center justify-between">
+              <span className="text-xs font-bold text-[#67778E]">Total Pembayaran</span>
+              <span className="text-sm font-black text-[#2B5EA9]">{formattedTotal}</span>
+            </div>
+          </div>
+
           {/* Section 1: Customer Info */}
           <div className="bg-white rounded-2xl p-4 border border-[#E2DDD0] space-y-3">
             <h3 className="text-xs font-bold text-[#1E447C] uppercase tracking-wider">
@@ -225,11 +277,34 @@ export default function CheckoutModal() {
             </div>
           </div>
 
-          {/* Section 2: Order Type */}
+          {/* Section 2: Order Type & Day */}
           <div className="bg-white rounded-2xl p-4 border border-[#E2DDD0] space-y-3">
             <h3 className="text-xs font-bold text-[#1E447C] uppercase tracking-wider">
-              2. Metode Pengambilan
+              2. Metode &amp; Hari Pengambilan
             </h3>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#67778E] mb-1.5 flex items-center gap-1.5">
+                <CalendarDays className="w-3.5 h-3.5 text-[#2B5EA9]" />
+                <span>Pilih Hari Pengambilan *</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["Senin", "Selasa"] as const).map((day) => (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => setPickupDay(day)}
+                    className={`py-2.5 px-3 rounded-xl border text-center text-xs font-bold transition-all ${
+                      pickupDay === day
+                        ? "border-[#2B5EA9] bg-[#2B5EA9] text-white shadow-sm"
+                        : "border-[#D0D9E6] bg-[#F8FAFC] text-[#1E447C] hover:border-[#2B5EA9]/50"
+                    }`}
+                  >
+                    Hari {day}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             <div className="grid grid-cols-2 gap-2">
               <button

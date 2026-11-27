@@ -117,6 +117,7 @@ export default function OrderHistoryModal() {
                         {order.orderType === "delivery"
                           ? order.deliveryLocation || "Diantar"
                           : "Ambil di Lobby"}
+                        {order.pickupDay ? ` • Hari ${order.pickupDay}` : ""}
                       </span>
                     </div>
 

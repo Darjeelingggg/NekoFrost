@@ -31,6 +31,8 @@ export default function OrderSuccessModal() {
       ? `Diantar ke ${latestOrder.deliveryLocation || "Kelas"}`
       : "Ambil Sendiri di Lobby";
 
+  const pickupDayText = latestOrder.pickupDay ? `Hari ${latestOrder.pickupDay}` : "-";
+
   const paymentMethodText =
     latestOrder.paymentMethod === "qris"
       ? "QRIS"
@@ -42,6 +44,7 @@ export default function OrderSuccessModal() {
 Kode Pesanan: *#${latestOrder.id}*
 Nama: *${latestOrder.customerName}*
 No. WA: *${latestOrder.customerPhone}*
+Hari Pengambilan: *${pickupDayText}*
 Metode Pengambilan: *${deliveryMethodText}*
 Metode Pembayaran: *${paymentMethodText}*
 
@@ -100,6 +103,14 @@ Mohon segera diproses ya kak, terima kasih!`;
               <span className="text-[#7C8B9E]">Pemesan:</span>
               <span className="font-semibold text-[#1E447C]">{latestOrder.customerName}</span>
             </div>
+            {latestOrder.pickupDay && (
+              <div className="flex justify-between">
+                <span className="text-[#7C8B9E]">Hari Pengambilan:</span>
+                <span className="font-semibold text-[#1E447C]">
+                  Hari {latestOrder.pickupDay}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-[#7C8B9E]">Metode Pengambilan:</span>
               <span className="font-semibold text-[#1E447C]">

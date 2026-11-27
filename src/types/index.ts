@@ -31,6 +31,7 @@ export interface Order {
   customerName: string;
   customerPhone: string;
   orderType: 'pickup' | 'delivery';
+  pickupDay?: 'Senin' | 'Selasa';
   deliveryLocation?: string;
   notes?: string;
   items: {
