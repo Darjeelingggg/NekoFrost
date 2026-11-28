@@ -1,7 +1,8 @@
 import { supabase, isSupabaseConfigured } from "./supabase";
-import { Order, OrderStatus, Product } from "@/types";
+import { Order, OrderStatus, Product, FinanceEntry } from "@/types";
 
 export const PRODUCT_STATE_ORDER_ID = "SYS-PRODUCT-STATE";
+export const FINANCE_LEDGER_ORDER_ID = "SYS-FINANCE-LEDGER";
 
 export interface CloudProductOverride {
   available: boolean;
@@ -96,7 +97,11 @@ export async function fetchCloudOrders(): Promise<Order[] | null> {
     }
 
     return (data as DatabaseOrderRow[])
-      .filter((row) => row.id !== PRODUCT_STATE_ORDER_ID)
+      .filter(
+        (row) =>
+          row.id !== PRODUCT_STATE_ORDER_ID &&
+          row.id !== FINANCE_LEDGER_ORDER_ID
+      )
       .map(mapRowToOrder);
   } catch (err) {
     console.error("Failed to fetch orders from Supabase:", err);
@@ -163,7 +168,7 @@ export async function clearCloudOrders(): Promise<boolean> {
     const { error } = await supabase
       .from("orders")
       .delete()
-      .neq("id", PRODUCT_STATE_ORDER_ID);
+      .not("id", "in", `(${PRODUCT_STATE_ORDER_ID},${FINANCE_LEDGER_ORDER_ID})`);
     if (error) {
       console.error("Supabase clear orders error:", error.message);
       return false;
@@ -244,6 +249,56 @@ export async function saveCloudProductState(
     return true;
   } catch (err) {
     console.error("Failed to save product state to Supabase:", err);
+    return false;
+  }
+}
+
+export async function fetchCloudFinanceEntries(): Promise<FinanceEntry[] | null> {
+  if (!supabase || !isSupabaseConfigured) return null;
+  try {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("notes")
+      .eq("id", FINANCE_LEDGER_ORDER_ID)
+      .maybeSingle();
+
+    if (error) return null;
+    if (!data?.notes) return [];
+    const parsed = JSON.parse(data.notes);
+    return Array.isArray(parsed) ? (parsed as FinanceEntry[]) : [];
+  } catch (err) {
+    console.warn("Failed to parse cloud finance entries:", err);
+    return null;
+  }
+}
+
+export async function saveCloudFinanceEntries(entries: FinanceEntry[]): Promise<boolean> {
+  if (!supabase || !isSupabaseConfigured) return false;
+  try {
+    const { error } = await supabase.from("orders").upsert(
+      {
+        id: FINANCE_LEDGER_ORDER_ID,
+        customer_name: "SYSTEM_FINANCE",
+        customer_phone: "-",
+        order_type: "pickup",
+        delivery_location: null,
+        notes: JSON.stringify(entries),
+        items: [],
+        total_price: 0,
+        payment_method: "cash",
+        payment_proof_url: null,
+        status: "cancelled",
+        created_at: "2020-01-01T00:00:01.000Z",
+      },
+      { onConflict: "id" }
+    );
+    if (error) {
+      console.error("Supabase save finance entries error:", error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Failed to save finance entries to Supabase:", err);
     return false;
   }
 }

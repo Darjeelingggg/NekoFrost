@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { Product, CartItem, Order, OrderStatus, ProductCategory } from "@/types";
+import { Product, CartItem, Order, OrderStatus, ProductCategory, FinanceEntry } from "@/types";
 import { initialProducts } from "@/data/products";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import {
@@ -12,6 +12,8 @@ import {
   clearCloudOrders,
   fetchCloudProductState,
   saveCloudProductState,
+  fetchCloudFinanceEntries,
+  saveCloudFinanceEntries,
   CloudProductState,
 } from "@/lib/orderService";
 
@@ -73,6 +75,11 @@ interface AppContextType {
   updateProduct: (product: Product) => void;
   addProduct: (product: Product) => void;
 
+  // Finance Ledger (Pemasukan & Pengeluaran)
+  financeEntries: FinanceEntry[];
+  addFinanceEntry: (entry: Omit<FinanceEntry, "id" | "createdAt">) => void;
+  deleteFinanceEntry: (entryId: string) => void;
+
   // Realtime Stock helpers
   getProductStock: (productId: string) => number;
   getProductOrderedQty: (productId: string) => number;
@@ -95,6 +102,7 @@ const LOCAL_STORAGE_PRODUCTS = "kwu_products_v24";
 const LOCAL_STORAGE_CART = "kwu_cart_v3";
 const LOCAL_STORAGE_ORDERS = "kwu_orders_v4";
 const LOCAL_STORAGE_LIKES = "kwu_likes_v1";
+const LOCAL_STORAGE_FINANCE = "kwu_finance_v1";
 
 // Daftar produk yang memiliki batasan kuota stok (Hanya varian Risol)
 // Boneless Chichick, Kentang Goreng, dan Minuman Yuzu tidak memiliki batasan stok
@@ -176,6 +184,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [financeEntries, setFinanceEntries] = useState<FinanceEntry[]>([]);
   const [likedProductIds, setLikedProductIds] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -220,6 +229,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       const savedLikes = localStorage.getItem(LOCAL_STORAGE_LIKES);
       if (savedLikes) setLikedProductIds(JSON.parse(savedLikes));
+
+      const savedFinance = localStorage.getItem(LOCAL_STORAGE_FINANCE);
+      if (savedFinance) setFinanceEntries(JSON.parse(savedFinance));
     } catch (e) {
       console.error("LocalStorage load error:", e);
     } finally {
@@ -256,9 +268,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     let isMounted = true;
     const syncCloud = async () => {
-      const [cloudOrders, cloudProductState] = await Promise.all([
+      const [cloudOrders, cloudProductState, cloudFinance] = await Promise.all([
         fetchCloudOrders(),
         fetchCloudProductState(),
+        fetchCloudFinanceEntries(),
       ]);
       if (isMounted) {
         if (cloudOrders !== null) {
@@ -266,6 +279,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
         if (cloudProductState) {
           setProducts((prev) => mergeCloudProductState(prev, cloudProductState));
+        }
+        if (cloudFinance !== null) {
+          setFinanceEntries(cloudFinance);
         }
       }
     };
@@ -337,6 +353,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       console.error("Save likes error", e);
     }
   }, [likedProductIds, isLoaded]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    try {
+      localStorage.setItem(LOCAL_STORAGE_FINANCE, JSON.stringify(financeEntries));
+    } catch (e) {
+      console.error("Save finance entries error", e);
+    }
+  }, [financeEntries, isLoaded]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -687,15 +712,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const refreshOrders = async () => {
     if (isSupabaseConfigured) {
-      const [cloudOrders, cloudProductState] = await Promise.all([
+      const [cloudOrders, cloudProductState, cloudFinance] = await Promise.all([
         fetchCloudOrders(),
         fetchCloudProductState(),
+        fetchCloudFinanceEntries(),
       ]);
       if (cloudOrders !== null) {
         setOrders(cloudOrders);
       }
       if (cloudProductState) {
         setProducts((prev) => mergeCloudProductState(prev, cloudProductState));
+      }
+      if (cloudFinance !== null) {
+        setFinanceEntries(cloudFinance);
       }
     }
   };
@@ -797,6 +826,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const syncFinanceToCloud = (nextEntries: FinanceEntry[]) => {
+    if (!isSupabaseConfigured) return;
+    saveCloudFinanceEntries(nextEntries).then((ok) => {
+      if (!ok) {
+        showToast("Gagal menyinkronkan catatan keuangan ke database!");
+      }
+    });
+  };
+
+  const addFinanceEntry = (entryData: Omit<FinanceEntry, "id" | "createdAt">) => {
+    const newEntry: FinanceEntry = {
+      ...entryData,
+      id: `FIN-${Date.now().toString().slice(-6)}`,
+      createdAt: new Date().toISOString(),
+    };
+    setFinanceEntries((prev) => {
+      const next = [newEntry, ...prev];
+      syncFinanceToCloud(next);
+      return next;
+    });
+  };
+
+  const deleteFinanceEntry = (entryId: string) => {
+    setFinanceEntries((prev) => {
+      const next = prev.filter((e) => e.id !== entryId);
+      syncFinanceToCloud(next);
+      return next;
+    });
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -835,6 +894,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         toggleProductAvailability,
         updateProduct,
         addProduct,
+        financeEntries,
+        addFinanceEntry,
+        deleteFinanceEntry,
         getProductStock,
         getProductOrderedQty,
         isProductAvailable,

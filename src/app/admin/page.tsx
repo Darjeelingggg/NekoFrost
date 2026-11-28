@@ -40,6 +40,9 @@ export default function AdminPage() {
     getProductStock,
     getProductOrderedQty,
     hasStockLimit,
+    financeEntries,
+    addFinanceEntry,
+    deleteFinanceEntry,
   } = useApp();
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -54,7 +57,15 @@ export default function AdminPage() {
 
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dayFilter, setDayFilter] = useState<"all" | "Kamis" | "Senin" | "Selasa">("all");
-  const [activeTab, setActiveTab] = useState<"orders" | "products">("orders");
+  const [activeTab, setActiveTab] = useState<"orders" | "products" | "finance">("orders");
+
+  // Finance ledger state
+  const [finType, setFinType] = useState<"income" | "expense">("expense");
+  const [finTitle, setFinTitle] = useState("");
+  const [finAmount, setFinAmount] = useState("");
+  const [finDay, setFinDay] = useState("Kamis");
+  const [finNotes, setFinNotes] = useState("");
+  const [finFilter, setFinFilter] = useState<"all" | "income" | "expense">("all");
 
   // New product modal state
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
@@ -498,10 +509,10 @@ export default function AdminPage() {
         </div>
 
         {/* View Tabs */}
-        <div className="flex items-center gap-2 border-b border-[#DCD6C7] pb-2">
+        <div className="flex items-center gap-2 border-b border-[#DCD6C7] pb-2 overflow-x-auto no-scrollbar">
           <button
             onClick={() => setActiveTab("orders")}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${activeTab === "orders"
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${activeTab === "orders"
               ? "bg-[#2B5EA9] text-white shadow-sm"
               : "text-[#67778E] hover:bg-white/60"
               }`}
@@ -511,12 +522,22 @@ export default function AdminPage() {
 
           <button
             onClick={() => setActiveTab("products")}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${activeTab === "products"
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${activeTab === "products"
               ? "bg-[#2B5EA9] text-white shadow-sm"
               : "text-[#67778E] hover:bg-white/60"
               }`}
           >
             Katalog Produk & Stok ({products.length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab("finance")}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all ${activeTab === "finance"
+              ? "bg-[#2B5EA9] text-white shadow-sm"
+              : "text-[#67778E] hover:bg-white/60"
+              }`}
+          >
+            Pencatatan Keuangan ({financeEntries.length})
           </button>
         </div>
 
@@ -864,6 +885,249 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* TAB 3: FINANCE LEDGER (PEMASUKAN & PENGELUARAN) */}
+        {activeTab === "finance" && (() => {
+          const totalNoteIncome = financeEntries
+            .filter((e) => e.type === "income")
+            .reduce((s, e) => s + e.amount, 0);
+          const totalExpense = financeEntries
+            .filter((e) => e.type === "expense")
+            .reduce((s, e) => s + e.amount, 0);
+          const allTimeOrderRevenue = combinedOrders
+            .filter((o) => o.status !== "cancelled")
+            .reduce((s, o) => s + o.totalPrice, 0);
+          const netBalance = allTimeOrderRevenue + totalNoteIncome - totalExpense;
+
+          const filteredFinance = financeEntries.filter((e) =>
+            finFilter === "all" ? true : e.type === finFilter
+          );
+
+          const handleAddFinance = (e: React.FormEvent) => {
+            e.preventDefault();
+            const parsedAmount = Number(finAmount);
+            if (!finTitle.trim() || !parsedAmount || parsedAmount <= 0) {
+              alert("Mohon isi keterangan dan nominal yang valid.");
+              return;
+            }
+            addFinanceEntry({
+              type: finType,
+              title: finTitle.trim(),
+              amount: parsedAmount,
+              dayLabel: finDay.trim() || "Umum",
+              notes: finNotes.trim() || undefined,
+            });
+            setFinTitle("");
+            setFinAmount("");
+            setFinNotes("");
+          };
+
+          return (
+            <div className="space-y-5">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-white p-4 rounded-2xl border border-[#E2DDD0] shadow-sm">
+                  <span className="text-[11px] font-bold text-[#7C8B9E] uppercase block">
+                    Total Pemasukan (Penjualan + Catatan)
+                  </span>
+                  <span className="text-lg font-black text-emerald-700 mt-1 block">
+                    Rp {(allTimeOrderRevenue + totalNoteIncome).toLocaleString("id-ID")}
+                  </span>
+                  <span className="text-[10px] text-[#67778E] block mt-0.5">
+                    Penjualan: Rp {allTimeOrderRevenue.toLocaleString("id-ID")} • Catatan: Rp {totalNoteIncome.toLocaleString("id-ID")}
+                  </span>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-[#E2DDD0] shadow-sm">
+                  <span className="text-[11px] font-bold text-[#7C8B9E] uppercase block">
+                    Total Pengeluaran
+                  </span>
+                  <span className="text-lg font-black text-rose-600 mt-1 block">
+                    Rp {totalExpense.toLocaleString("id-ID")}
+                  </span>
+                  <span className="text-[10px] text-[#67778E] block mt-0.5">
+                    {financeEntries.filter((e) => e.type === "expense").length} catatan pengeluaran
+                  </span>
+                </div>
+
+                <div className="bg-white p-4 rounded-2xl border border-[#E2DDD0] shadow-sm">
+                  <span className="text-[11px] font-bold text-[#7C8B9E] uppercase block">
+                    Saldo Bersih (Kas)
+                  </span>
+                  <span className={`text-lg font-black mt-1 block ${netBalance >= 0 ? "text-[#1E447C]" : "text-rose-600"}`}>
+                    Rp {netBalance.toLocaleString("id-ID")}
+                  </span>
+                  <span className="text-[10px] text-[#2B5EA9] block mt-0.5 font-semibold">
+                    Tersinkron ke Database Supabase
+                  </span>
+                </div>
+              </div>
+
+              {/* Add Entry Form */}
+              <form
+                onSubmit={handleAddFinance}
+                className="bg-white rounded-2xl p-4 sm:p-5 border border-[#E2DDD0] shadow-sm space-y-3"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-bold text-[#1E447C]">
+                    Tambah Catatan Pemasukan / Pengeluaran
+                  </h3>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setFinType("expense")}
+                      className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${
+                        finType === "expense"
+                          ? "bg-rose-600 text-white border-rose-600"
+                          : "bg-[#F8FAFC] text-[#67778E] border-[#D0D9E6]"
+                      }`}
+                    >
+                      - Pengeluaran
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFinType("income")}
+                      className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${
+                        finType === "income"
+                          ? "bg-emerald-600 text-white border-emerald-600"
+                          : "bg-[#F8FAFC] text-[#67778E] border-[#D0D9E6]"
+                      }`}
+                    >
+                      + Pemasukan
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Keterangan (mis: Beli ayam / Modal)"
+                    value={finTitle}
+                    onChange={(e) => setFinTitle(e.target.value)}
+                    className="sm:col-span-2 px-3 py-2 rounded-xl border border-[#D0D9E6] text-xs text-[#1E447C] bg-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#2B5EA9]"
+                  />
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    placeholder="Nominal (Rp)"
+                    value={finAmount}
+                    onChange={(e) => setFinAmount(e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-[#D0D9E6] text-xs font-bold text-[#1E447C] bg-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#2B5EA9]"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Hari / Tgl (mis: Kamis)"
+                    value={finDay}
+                    onChange={(e) => setFinDay(e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-[#D0D9E6] text-xs text-[#1E447C] bg-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#2B5EA9]"
+                  />
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2.5">
+                  <input
+                    type="text"
+                    placeholder="Catatan tambahan (opsional)"
+                    value={finNotes}
+                    onChange={(e) => setFinNotes(e.target.value)}
+                    className="flex-1 px-3 py-2 rounded-xl border border-[#D0D9E6] text-xs text-[#1E447C] bg-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#2B5EA9]"
+                  />
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl text-xs font-bold bg-[#2B5EA9] text-white hover:bg-[#1E447C] transition-colors shadow-sm"
+                  >
+                    Simpan Catatan
+                  </button>
+                </div>
+              </form>
+
+              {/* Filter Pills */}
+              <div className="flex items-center gap-2">
+                {(
+                  [
+                    { id: "all", label: "Semua" },
+                    { id: "income", label: "Pemasukan" },
+                    { id: "expense", label: "Pengeluaran" },
+                  ] as const
+                ).map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setFinFilter(f.id)}
+                    className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${
+                      finFilter === f.id
+                        ? "bg-[#2B5EA9] text-white border-[#2B5EA9]"
+                        : "bg-white text-[#67778E] border-[#E2DDD0]"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Entries List */}
+              {filteredFinance.length === 0 ? (
+                <div className="bg-white rounded-3xl p-10 text-center border border-[#E2DDD0] text-[#7C8B9E]">
+                  <p className="font-bold text-[#1E447C] text-sm">Belum ada catatan keuangan</p>
+                  <p className="text-xs mt-1">Tambahkan pemasukan atau pengeluaran menggunakan form di atas.</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {filteredFinance.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="bg-white rounded-2xl p-3.5 sm:p-4 border border-[#E2DDD0] shadow-xs flex items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span
+                            className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                              entry.type === "income"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                : "bg-rose-50 text-rose-700 border-rose-200"
+                            }`}
+                          >
+                            {entry.type === "income" ? "PEMASUKAN" : "PENGELUARAN"}
+                          </span>
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#EAF2FD] text-[#2B5EA9]">
+                            {entry.dayLabel}
+                          </span>
+                        </div>
+                        <p className="text-sm font-bold text-[#1E447C] mt-1">{entry.title}</p>
+                        {entry.notes && (
+                          <p className="text-[11px] text-[#67778E] italic mt-0.5">{entry.notes}</p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3 flex-shrink-0">
+                        <span
+                          className={`text-sm font-black whitespace-nowrap ${
+                            entry.type === "income" ? "text-emerald-700" : "text-rose-600"
+                          }`}
+                        >
+                          {entry.type === "income" ? "+" : "-"}Rp {entry.amount.toLocaleString("id-ID")}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm(`Hapus catatan "${entry.title}"?`)) {
+                              deleteFinanceEntry(entry.id);
+                            }
+                          }}
+                          className="p-1.5 rounded-xl bg-neutral-100 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          title="Hapus Catatan"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Modal: Tambah Menu Baru */}
         {isAddProductOpen && (

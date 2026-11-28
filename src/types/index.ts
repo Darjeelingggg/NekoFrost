@@ -47,3 +47,13 @@ export interface Order {
   status: OrderStatus;
   createdAt: string;
 }
+
+export interface FinanceEntry {
+  id: string;
+  type: 'income' | 'expense';
+  title: string;
+  amount: number;
+  dayLabel: string;
+  notes?: string;
+  createdAt: string;
+}
