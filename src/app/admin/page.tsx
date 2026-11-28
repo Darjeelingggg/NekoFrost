@@ -173,13 +173,17 @@ export default function AdminPage() {
     combinedOrders.push(...offlineThursdayOrders);
   }
 
-  const totalRevenue = combinedOrders
+  const grossFilteredRevenue = combinedOrders
     .filter(
       (o) =>
         o.status !== "cancelled" &&
         (dayFilter === "all" || getOrderDay(o) === dayFilter)
     )
     .reduce((sum, o) => sum + o.totalPrice, 0);
+
+  // Potong Rp 105.000 pembayaran Ayam Ojak dari penghasilan hari Kamis (dan total semua hari)
+  const ojakChickenDeduction = dayFilter === "all" || dayFilter === "Kamis" ? 105000 : 0;
+  const totalRevenue = Math.max(0, grossFilteredRevenue - ojakChickenDeduction);
 
   const pendingOrders = orders.filter((o) => o.status === "pending" || o.status === "cooking");
 
@@ -443,6 +447,11 @@ export default function AdminPage() {
             <span className="text-[10px] text-emerald-600 block mt-1 font-semibold">
               {dayFilter === "all" ? "Semua Hari (Online + Offline)" : `Khusus Hari ${dayFilter}`}
             </span>
+            {ojakChickenDeduction > 0 && (
+              <span className="text-[10px] text-rose-600 block mt-0.5 font-semibold">
+                Omzet Rp {grossFilteredRevenue.toLocaleString("id-ID")} - Ayam Ojak Rp 105.000
+              </span>
+            )}
             <div className="flex items-center gap-1 flex-wrap mt-2.5 pt-2 border-t border-[#EFEBE1]">
               {(
                 [
