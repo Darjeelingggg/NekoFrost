@@ -9,6 +9,7 @@ import {
   insertCloudOrder,
   updateCloudOrderStatus,
   deleteCloudOrder,
+  clearCloudOrders,
   fetchCloudProductState,
   saveCloudProductState,
   CloudProductState,
@@ -260,7 +261,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         fetchCloudProductState(),
       ]);
       if (isMounted) {
-        if (cloudOrders.length > 0) {
+        if (cloudOrders !== null) {
           setOrders(cloudOrders);
         }
         if (cloudProductState) {
@@ -690,7 +691,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         fetchCloudOrders(),
         fetchCloudProductState(),
       ]);
-      if (cloudOrders.length > 0) {
+      if (cloudOrders !== null) {
         setOrders(cloudOrders);
       }
       if (cloudProductState) {
@@ -754,18 +755,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {
       console.error(e);
     }
+    if (isSupabaseConfigured) {
+      clearCloudOrders();
+    }
   };
 
   const initialProductIds = initialProducts.map((p) => p.id);
+
+  const syncProductStateToCloud = (nextProducts: Product[]) => {
+    if (!isSupabaseConfigured) return;
+    saveCloudProductState(nextProducts, initialProductIds).then((ok) => {
+      if (!ok) {
+        showToast("Gagal menyinkronkan status menu ke database!");
+      }
+    });
+  };
 
   const toggleProductAvailability = (productId: string) => {
     setProducts((prev) => {
       const next = prev.map((p) =>
         p.id === productId ? { ...p, available: !p.available } : p
       );
-      if (isSupabaseConfigured) {
-        saveCloudProductState(next, initialProductIds);
-      }
+      syncProductStateToCloud(next);
       return next;
     });
   };
@@ -773,9 +784,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const updateProduct = (updated: Product) => {
     setProducts((prev) => {
       const next = prev.map((p) => (p.id === updated.id ? updated : p));
-      if (isSupabaseConfigured) {
-        saveCloudProductState(next, initialProductIds);
-      }
+      syncProductStateToCloud(next);
       return next;
     });
   };
@@ -783,9 +792,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const addProduct = (newProduct: Product) => {
     setProducts((prev) => {
       const next = [newProduct, ...prev];
-      if (isSupabaseConfigured) {
-        saveCloudProductState(next, initialProductIds);
-      }
+      syncProductStateToCloud(next);
       return next;
     });
   };

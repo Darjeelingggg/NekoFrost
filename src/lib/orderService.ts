@@ -82,8 +82,8 @@ export function mapOrderToRow(order: Order): DatabaseOrderRow {
   };
 }
 
-export async function fetchCloudOrders(): Promise<Order[]> {
-  if (!supabase || !isSupabaseConfigured) return [];
+export async function fetchCloudOrders(): Promise<Order[] | null> {
+  if (!supabase || !isSupabaseConfigured) return null;
   try {
     const { data, error } = await supabase
       .from("orders")
@@ -92,7 +92,7 @@ export async function fetchCloudOrders(): Promise<Order[]> {
 
     if (error) {
       console.warn("Supabase fetch orders notice:", error.message);
-      return [];
+      return null;
     }
 
     return (data as DatabaseOrderRow[])
@@ -100,7 +100,7 @@ export async function fetchCloudOrders(): Promise<Order[]> {
       .map(mapRowToOrder);
   } catch (err) {
     console.error("Failed to fetch orders from Supabase:", err);
-    return [];
+    return null;
   }
 }
 
@@ -153,6 +153,24 @@ export async function deleteCloudOrder(orderId: string): Promise<boolean> {
     return true;
   } catch (err) {
     console.error("Failed to delete order from Supabase:", err);
+    return false;
+  }
+}
+
+export async function clearCloudOrders(): Promise<boolean> {
+  if (!supabase || !isSupabaseConfigured) return false;
+  try {
+    const { error } = await supabase
+      .from("orders")
+      .delete()
+      .neq("id", PRODUCT_STATE_ORDER_ID);
+    if (error) {
+      console.error("Supabase clear orders error:", error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Failed to clear orders from Supabase:", err);
     return false;
   }
 }
