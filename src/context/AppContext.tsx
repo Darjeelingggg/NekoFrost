@@ -103,7 +103,7 @@ const LOCAL_STORAGE_PRODUCTS = "kwu_products_v24";
 const LOCAL_STORAGE_CART = "kwu_cart_v3";
 const LOCAL_STORAGE_ORDERS = "kwu_orders_v4";
 const LOCAL_STORAGE_LIKES = "kwu_likes_v1";
-const LOCAL_STORAGE_FINANCE = "kwu_finance_v2";
+const LOCAL_STORAGE_FINANCE = "kwu_finance_v3";
 
 // Daftar produk yang memiliki batasan kuota stok (Hanya varian Risol)
 // Boneless Chichick, Kentang Goreng, dan Minuman Yuzu tidak memiliki batasan stok
@@ -288,7 +288,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           setProducts((prev) => mergeCloudProductState(prev, cloudProductState));
         }
         if (cloudFinance !== null && cloudFinance.length > 0) {
-          setFinanceEntries(cloudFinance);
+          const updatedOjak = initialFinanceEntries.find((e) => e.id === "FIN-INIT-10");
+          setFinanceEntries(
+            cloudFinance.map((e) => (e.id === "FIN-INIT-10" && updatedOjak ? updatedOjak : e))
+          );
         }
       }
     };
@@ -731,7 +734,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setProducts((prev) => mergeCloudProductState(prev, cloudProductState));
       }
       if (cloudFinance !== null && cloudFinance.length > 0) {
-        setFinanceEntries(cloudFinance);
+        const updatedOjak = initialFinanceEntries.find((e) => e.id === "FIN-INIT-10");
+        setFinanceEntries(
+          cloudFinance.map((e) => (e.id === "FIN-INIT-10" && updatedOjak ? updatedOjak : e))
+        );
       }
     }
   };

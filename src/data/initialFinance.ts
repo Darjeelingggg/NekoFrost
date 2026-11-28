@@ -35,14 +35,15 @@ export const initialFinanceEntries: FinanceEntry[] = [
     createdAt: "2026-11-26T10:01:00.000Z",
   },
 
-  // --- RABU / AYAM OJAK ---
+  // --- RABU / AYAM OJAK (LUNAS DIBAYAR DARI PENGHASILAN KAMIS) ---
   {
     id: "FIN-INIT-10",
     type: "expense",
-    title: "Ayam Ojak + bumbu",
+    title: "Ayam Ojak + bumbu (Lunas)",
     amount: 105000,
-    dayLabel: "Rabu (25 Nov)",
-    createdAt: "2026-11-25T15:00:00.000Z",
+    dayLabel: "28 Nov 2026",
+    notes: "Dibayar dari penghasilan hari Kamis Rp 210.000 (sisa penghasilan Kamis: Rp 105.000)",
+    createdAt: "2026-11-28T09:47:00.000Z",
   },
 
   // --- 25 NOVEMBER 2026 ---
