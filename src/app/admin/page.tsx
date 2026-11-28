@@ -948,13 +948,13 @@ export default function AdminPage() {
 
                   <div className="bg-white p-4 rounded-2xl border border-[#E2DDD0] shadow-sm">
                     <span className="text-[11px] font-bold text-[#7C8B9E] uppercase block">
-                      Pemasukan dari Penjualan
+                      Pemasukan dari Penjualan (Omzet Kotor)
                     </span>
                     <span className="text-lg font-black text-emerald-600 mt-1 block">
                       Rp {allTimeOrderRevenue.toLocaleString("id-ID")}
                     </span>
                     <span className="text-[10px] text-[#67778E] block mt-0.5">
-                      Omzet penjualan online &amp; offline
+                      Sisa setelah bayar Ayam Ojak (Rp 105.000): <b className="text-[#1E447C]">Rp {Math.max(0, allTimeOrderRevenue - 105000).toLocaleString("id-ID")}</b>
                     </span>
                   </div>
 
