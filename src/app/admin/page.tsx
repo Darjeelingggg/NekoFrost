@@ -922,40 +922,71 @@ export default function AdminPage() {
           return (
             <div className="space-y-5">
               {/* Summary Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="bg-white p-4 rounded-2xl border border-[#E2DDD0] shadow-sm">
-                  <span className="text-[11px] font-bold text-[#7C8B9E] uppercase block">
-                    Total Pemasukan (Penjualan + Catatan)
-                  </span>
-                  <span className="text-lg font-black text-emerald-700 mt-1 block">
-                    Rp {(allTimeOrderRevenue + totalNoteIncome).toLocaleString("id-ID")}
-                  </span>
-                  <span className="text-[10px] text-[#67778E] block mt-0.5">
-                    Penjualan: Rp {allTimeOrderRevenue.toLocaleString("id-ID")} • Catatan: Rp {totalNoteIncome.toLocaleString("id-ID")}
-                  </span>
+              <div className="space-y-3">
+                {/* Baris 1: Rincian Pemasukan */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="bg-white p-4 rounded-2xl border border-[#E2DDD0] shadow-sm">
+                    <span className="text-[11px] font-bold text-[#7C8B9E] uppercase block">
+                      Uang Kas Awal (PT-PT / Catatan)
+                    </span>
+                    <span className="text-lg font-black text-[#2B5EA9] mt-1 block">
+                      Rp {totalNoteIncome.toLocaleString("id-ID")}
+                    </span>
+                    <span className="text-[10px] text-[#67778E] block mt-0.5">
+                      {financeEntries.filter((e) => e.type === "income").length} catatan pemasukan modal
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-2xl border border-[#E2DDD0] shadow-sm">
+                    <span className="text-[11px] font-bold text-[#7C8B9E] uppercase block">
+                      Pemasukan dari Penjualan
+                    </span>
+                    <span className="text-lg font-black text-emerald-600 mt-1 block">
+                      Rp {allTimeOrderRevenue.toLocaleString("id-ID")}
+                    </span>
+                    <span className="text-[10px] text-[#67778E] block mt-0.5">
+                      Omzet penjualan online &amp; offline
+                    </span>
+                  </div>
+
+                  <div className="bg-emerald-50/70 p-4 rounded-2xl border border-emerald-200 shadow-sm">
+                    <span className="text-[11px] font-bold text-emerald-800 uppercase block">
+                      Total Pemasukan (Kas Awal + Penjualan)
+                    </span>
+                    <span className="text-lg font-black text-emerald-700 mt-1 block">
+                      Rp {(allTimeOrderRevenue + totalNoteIncome).toLocaleString("id-ID")}
+                    </span>
+                    <span className="text-[10px] text-emerald-700/80 block mt-0.5 font-medium">
+                      Rp {totalNoteIncome.toLocaleString("id-ID")} + Rp {allTimeOrderRevenue.toLocaleString("id-ID")}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="bg-white p-4 rounded-2xl border border-[#E2DDD0] shadow-sm">
-                  <span className="text-[11px] font-bold text-[#7C8B9E] uppercase block">
-                    Total Pengeluaran
-                  </span>
-                  <span className="text-lg font-black text-rose-600 mt-1 block">
-                    Rp {totalExpense.toLocaleString("id-ID")}
-                  </span>
-                  <span className="text-[10px] text-[#67778E] block mt-0.5">
-                    {financeEntries.filter((e) => e.type === "expense").length} catatan pengeluaran
-                  </span>
-                </div>
+                {/* Baris 2: Pengeluaran & Saldo Akhir */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="bg-white p-4 rounded-2xl border border-[#E2DDD0] shadow-sm">
+                    <span className="text-[11px] font-bold text-[#7C8B9E] uppercase block">
+                      Total Pengeluaran
+                    </span>
+                    <span className="text-lg font-black text-rose-600 mt-1 block">
+                      Rp {totalExpense.toLocaleString("id-ID")}
+                    </span>
+                    <span className="text-[10px] text-[#67778E] block mt-0.5">
+                      {financeEntries.filter((e) => e.type === "expense").length} catatan pengeluaran
+                    </span>
+                  </div>
 
-                <div className="bg-white p-4 rounded-2xl border border-[#E2DDD0] shadow-sm">
-                  <span className="text-[11px] font-bold text-[#7C8B9E] uppercase block">
-                    Saldo Bersih (Kas)
-                  </span>
-                  <span className={`text-lg font-black mt-1 block ${netBalance >= 0 ? "text-[#1E447C]" : "text-rose-600"}`}>
-                    Rp {netBalance.toLocaleString("id-ID")}
-                  </span>
-                  <span className="text-[10px] text-[#2B5EA9] block mt-0.5 font-semibold">
-                  </span>
+                  <div className="bg-white p-4 rounded-2xl border border-[#E2DDD0] shadow-sm">
+                    <span className="text-[11px] font-bold text-[#7C8B9E] uppercase block">
+                      Saldo Bersih (Kas Akhir)
+                    </span>
+                    <span className={`text-lg font-black mt-1 block ${netBalance >= 0 ? "text-[#1E447C]" : "text-rose-600"}`}>
+                      Rp {netBalance.toLocaleString("id-ID")}
+                    </span>
+                    <span className="text-[10px] text-[#2B5EA9] block mt-0.5 font-semibold">
+                      Total Pemasukan - Total Pengeluaran
+                    </span>
+                  </div>
                 </div>
               </div>
 
