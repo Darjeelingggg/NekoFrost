@@ -456,11 +456,10 @@ export default function AdminPage() {
                   key={d.id}
                   type="button"
                   onClick={() => setDayFilter(d.id)}
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors ${
-                    dayFilter === d.id
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-colors ${dayFilter === d.id
                       ? "bg-[#2B5EA9] text-white"
                       : "bg-[#F8FAFC] text-[#67778E] border border-[#E2DDD0] hover:bg-[#EAF2FD]"
-                  }`}
+                    }`}
                 >
                   {d.label}
                 </button>
@@ -585,11 +584,10 @@ export default function AdminPage() {
                     key={d.id}
                     type="button"
                     onClick={() => setDayFilter(d.id)}
-                    className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap border transition-colors ${
-                      dayFilter === d.id
+                    className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap border transition-colors ${dayFilter === d.id
                         ? d.activeClass
                         : "bg-white text-[#67778E] border-[#E2DDD0] hover:bg-[#F8FAFC]"
-                    }`}
+                      }`}
                   >
                     {d.label}
                   </button>
@@ -630,11 +628,10 @@ export default function AdminPage() {
                   return (
                     <div
                       key={order.id}
-                      className={`rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 ${
-                        order.isOffline
+                      className={`rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 ${order.isOffline
                           ? "bg-gradient-to-r from-amber-50 to-[#FAF6E8] border-2 border-dashed border-amber-400"
                           : "bg-white border border-[#E2DDD0]"
-                      }`}
+                        }`}
                     >
                       <div className="space-y-2 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -958,7 +955,6 @@ export default function AdminPage() {
                     Rp {netBalance.toLocaleString("id-ID")}
                   </span>
                   <span className="text-[10px] text-[#2B5EA9] block mt-0.5 font-semibold">
-                    Tersinkron ke Database Supabase
                   </span>
                 </div>
               </div>
@@ -976,22 +972,20 @@ export default function AdminPage() {
                     <button
                       type="button"
                       onClick={() => setFinType("expense")}
-                      className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${
-                        finType === "expense"
+                      className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${finType === "expense"
                           ? "bg-rose-600 text-white border-rose-600"
                           : "bg-[#F8FAFC] text-[#67778E] border-[#D0D9E6]"
-                      }`}
+                        }`}
                     >
                       - Pengeluaran
                     </button>
                     <button
                       type="button"
                       onClick={() => setFinType("income")}
-                      className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${
-                        finType === "income"
+                      className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${finType === "income"
                           ? "bg-emerald-600 text-white border-emerald-600"
                           : "bg-[#F8FAFC] text-[#67778E] border-[#D0D9E6]"
-                      }`}
+                        }`}
                     >
                       + Pemasukan
                     </button>
@@ -1055,11 +1049,10 @@ export default function AdminPage() {
                     key={f.id}
                     type="button"
                     onClick={() => setFinFilter(f.id)}
-                    className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${
-                      finFilter === f.id
+                    className={`px-3 py-1 rounded-full text-xs font-bold border transition-colors ${finFilter === f.id
                         ? "bg-[#2B5EA9] text-white border-[#2B5EA9]"
                         : "bg-white text-[#67778E] border-[#E2DDD0]"
-                    }`}
+                      }`}
                   >
                     {f.label}
                   </button>
@@ -1082,11 +1075,10 @@ export default function AdminPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span
-                            className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
-                              entry.type === "income"
+                            className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${entry.type === "income"
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                                 : "bg-rose-50 text-rose-700 border-rose-200"
-                            }`}
+                              }`}
                           >
                             {entry.type === "income" ? "PEMASUKAN" : "PENGELUARAN"}
                           </span>
@@ -1102,9 +1094,8 @@ export default function AdminPage() {
 
                       <div className="flex items-center gap-3 flex-shrink-0">
                         <span
-                          className={`text-sm font-black whitespace-nowrap ${
-                            entry.type === "income" ? "text-emerald-700" : "text-rose-600"
-                          }`}
+                          className={`text-sm font-black whitespace-nowrap ${entry.type === "income" ? "text-emerald-700" : "text-rose-600"
+                            }`}
                         >
                           {entry.type === "income" ? "+" : "-"}Rp {entry.amount.toLocaleString("id-ID")}
                         </span>

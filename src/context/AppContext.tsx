@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Product, CartItem, Order, OrderStatus, ProductCategory, FinanceEntry } from "@/types";
 import { initialProducts } from "@/data/products";
+import { initialFinanceEntries } from "@/data/initialFinance";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import {
   fetchCloudOrders,
@@ -102,7 +103,7 @@ const LOCAL_STORAGE_PRODUCTS = "kwu_products_v24";
 const LOCAL_STORAGE_CART = "kwu_cart_v3";
 const LOCAL_STORAGE_ORDERS = "kwu_orders_v4";
 const LOCAL_STORAGE_LIKES = "kwu_likes_v1";
-const LOCAL_STORAGE_FINANCE = "kwu_finance_v1";
+const LOCAL_STORAGE_FINANCE = "kwu_finance_v2";
 
 // Daftar produk yang memiliki batasan kuota stok (Hanya varian Risol)
 // Boneless Chichick, Kentang Goreng, dan Minuman Yuzu tidak memiliki batasan stok
@@ -184,7 +185,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [financeEntries, setFinanceEntries] = useState<FinanceEntry[]>([]);
+  const [financeEntries, setFinanceEntries] = useState<FinanceEntry[]>(initialFinanceEntries);
   const [likedProductIds, setLikedProductIds] = useState<string[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -231,7 +232,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (savedLikes) setLikedProductIds(JSON.parse(savedLikes));
 
       const savedFinance = localStorage.getItem(LOCAL_STORAGE_FINANCE);
-      if (savedFinance) setFinanceEntries(JSON.parse(savedFinance));
+      if (savedFinance) {
+        const parsedFin = JSON.parse(savedFinance);
+        setFinanceEntries(Array.isArray(parsedFin) && parsedFin.length > 0 ? parsedFin : initialFinanceEntries);
+      } else {
+        localStorage.setItem(LOCAL_STORAGE_FINANCE, JSON.stringify(initialFinanceEntries));
+        setFinanceEntries(initialFinanceEntries);
+      }
     } catch (e) {
       console.error("LocalStorage load error:", e);
     } finally {
@@ -280,7 +287,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (cloudProductState) {
           setProducts((prev) => mergeCloudProductState(prev, cloudProductState));
         }
-        if (cloudFinance !== null) {
+        if (cloudFinance !== null && cloudFinance.length > 0) {
           setFinanceEntries(cloudFinance);
         }
       }
@@ -723,7 +730,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (cloudProductState) {
         setProducts((prev) => mergeCloudProductState(prev, cloudProductState));
       }
-      if (cloudFinance !== null) {
+      if (cloudFinance !== null && cloudFinance.length > 0) {
         setFinanceEntries(cloudFinance);
       }
     }
