@@ -1,5 +1,18 @@
 import { supabase, isSupabaseConfigured } from "./supabase";
-import { Order, OrderStatus } from "@/types";
+import { Order, OrderStatus, Product } from "@/types";
+
+export const PRODUCT_STATE_ORDER_ID = "SYS-PRODUCT-STATE";
+
+export interface CloudProductOverride {
+  available: boolean;
+  stock?: number;
+  price?: number;
+}
+
+export interface CloudProductState {
+  overrides: Record<string, CloudProductOverride>;
+  customProducts: Product[];
+}
 
 export interface DatabaseOrderRow {
   id: string;
@@ -82,7 +95,9 @@ export async function fetchCloudOrders(): Promise<Order[]> {
       return [];
     }
 
-    return (data as DatabaseOrderRow[]).map(mapRowToOrder);
+    return (data as DatabaseOrderRow[])
+      .filter((row) => row.id !== PRODUCT_STATE_ORDER_ID)
+      .map(mapRowToOrder);
   } catch (err) {
     console.error("Failed to fetch orders from Supabase:", err);
     return [];
@@ -138,6 +153,79 @@ export async function deleteCloudOrder(orderId: string): Promise<boolean> {
     return true;
   } catch (err) {
     console.error("Failed to delete order from Supabase:", err);
+    return false;
+  }
+}
+
+export async function fetchCloudProductState(): Promise<CloudProductState | null> {
+  if (!supabase || !isSupabaseConfigured) return null;
+  try {
+    const { data, error } = await supabase
+      .from("orders")
+      .select("notes")
+      .eq("id", PRODUCT_STATE_ORDER_ID)
+      .maybeSingle();
+
+    if (error || !data?.notes) return null;
+    const parsed = JSON.parse(data.notes);
+    if (parsed && typeof parsed === "object" && parsed.overrides) {
+      return parsed as CloudProductState;
+    }
+    return null;
+  } catch (err) {
+    console.warn("Failed to parse cloud product state:", err);
+    return null;
+  }
+}
+
+export async function saveCloudProductState(
+  productsList: Product[],
+  initialProductIds: string[]
+): Promise<boolean> {
+  if (!supabase || !isSupabaseConfigured) return false;
+  try {
+    const overrides: Record<string, CloudProductOverride> = {};
+    const customProducts: Product[] = [];
+
+    for (const p of productsList) {
+      if (initialProductIds.includes(p.id)) {
+        overrides[p.id] = {
+          available: p.available,
+          stock: p.stock,
+          price: p.price,
+        };
+      } else {
+        customProducts.push(p);
+      }
+    }
+
+    const payload: CloudProductState = { overrides, customProducts };
+
+    const { error } = await supabase.from("orders").upsert(
+      {
+        id: PRODUCT_STATE_ORDER_ID,
+        customer_name: "SYSTEM_CONFIG",
+        customer_phone: "-",
+        order_type: "pickup",
+        delivery_location: null,
+        notes: JSON.stringify(payload),
+        items: [],
+        total_price: 0,
+        payment_method: "cash",
+        payment_proof_url: null,
+        status: "cancelled",
+        created_at: "2020-01-01T00:00:00.000Z",
+      },
+      { onConflict: "id" }
+    );
+
+    if (error) {
+      console.error("Supabase save product state error:", error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("Failed to save product state to Supabase:", err);
     return false;
   }
 }

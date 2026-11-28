@@ -9,6 +9,9 @@ import {
   insertCloudOrder,
   updateCloudOrderStatus,
   deleteCloudOrder,
+  fetchCloudProductState,
+  saveCloudProductState,
+  CloudProductState,
 } from "@/lib/orderService";
 
 interface AppContextType {
@@ -87,7 +90,7 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_PRODUCTS = "kwu_products_v23";
+const LOCAL_STORAGE_PRODUCTS = "kwu_products_v24";
 const LOCAL_STORAGE_CART = "kwu_cart_v3";
 const LOCAL_STORAGE_ORDERS = "kwu_orders_v4";
 const LOCAL_STORAGE_LIKES = "kwu_likes_v1";
@@ -223,19 +226,50 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Sync Cloud Orders from Supabase & Listen to Realtime Updates
+  const mergeCloudProductState = (
+    currentList: Product[],
+    cloudState: CloudProductState
+  ): Product[] => {
+    const mergedInitial = initialProducts.map((initP) => {
+      const existing = currentList.find((p) => p.id === initP.id) || initP;
+      const ov = cloudState.overrides[initP.id];
+      if (!ov) return existing;
+      return {
+        ...existing,
+        available: ov.available,
+        stock: typeof ov.stock === "number" ? ov.stock : existing.stock,
+        price: typeof ov.price === "number" ? ov.price : existing.price,
+      };
+    });
+
+    const initialIds = initialProducts.map((p) => p.id);
+    const customFromCloud = (cloudState.customProducts || []).filter(
+      (cp) => !initialIds.includes(cp.id)
+    );
+    return [...customFromCloud, ...mergedInitial];
+  };
+
+  // Sync Cloud Orders & Product Availability/Stock from Supabase & Listen to Realtime Updates
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) return;
 
     let isMounted = true;
-    const syncOrders = async () => {
-      const cloudOrders = await fetchCloudOrders();
-      if (isMounted && cloudOrders.length > 0) {
-        setOrders(cloudOrders);
+    const syncCloud = async () => {
+      const [cloudOrders, cloudProductState] = await Promise.all([
+        fetchCloudOrders(),
+        fetchCloudProductState(),
+      ]);
+      if (isMounted) {
+        if (cloudOrders.length > 0) {
+          setOrders(cloudOrders);
+        }
+        if (cloudProductState) {
+          setProducts((prev) => mergeCloudProductState(prev, cloudProductState));
+        }
       }
     };
 
-    syncOrders();
+    syncCloud();
 
     const channel = supabase
       .channel("public-orders-realtime")
@@ -243,21 +277,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         "postgres_changes",
         { event: "*", schema: "public", table: "orders" },
         async () => {
-          const updated = await fetchCloudOrders();
-          if (isMounted) {
-            setOrders(updated);
-          }
+          await syncCloud();
         }
       )
       .subscribe();
 
     // Resilient periodic sync + sync on tab focus for instant real-time updates
     const pollInterval = setInterval(() => {
-      syncOrders();
+      syncCloud();
     }, 8000);
 
     const onFocus = () => {
-      syncOrders();
+      syncCloud();
     };
     window.addEventListener("focus", onFocus);
 
@@ -655,9 +686,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const refreshOrders = async () => {
     if (isSupabaseConfigured) {
-      const cloudOrders = await fetchCloudOrders();
+      const [cloudOrders, cloudProductState] = await Promise.all([
+        fetchCloudOrders(),
+        fetchCloudProductState(),
+      ]);
       if (cloudOrders.length > 0) {
         setOrders(cloudOrders);
+      }
+      if (cloudProductState) {
+        setProducts((prev) => mergeCloudProductState(prev, cloudProductState));
       }
     }
   };
@@ -719,22 +756,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const initialProductIds = initialProducts.map((p) => p.id);
+
   const toggleProductAvailability = (productId: string) => {
-    setProducts((prev) =>
-      prev.map((p) =>
+    setProducts((prev) => {
+      const next = prev.map((p) =>
         p.id === productId ? { ...p, available: !p.available } : p
-      )
-    );
+      );
+      if (isSupabaseConfigured) {
+        saveCloudProductState(next, initialProductIds);
+      }
+      return next;
+    });
   };
 
   const updateProduct = (updated: Product) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === updated.id ? updated : p))
-    );
+    setProducts((prev) => {
+      const next = prev.map((p) => (p.id === updated.id ? updated : p));
+      if (isSupabaseConfigured) {
+        saveCloudProductState(next, initialProductIds);
+      }
+      return next;
+    });
   };
 
   const addProduct = (newProduct: Product) => {
-    setProducts((prev) => [newProduct, ...prev]);
+    setProducts((prev) => {
+      const next = [newProduct, ...prev];
+      if (isSupabaseConfigured) {
+        saveCloudProductState(next, initialProductIds);
+      }
+      return next;
+    });
   };
 
   return (

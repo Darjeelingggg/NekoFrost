@@ -76,7 +76,7 @@ export const initialProducts: Product[] = [
     portion: "1 Box",
     calories: "320 kcal",
     likes: 520,
-    available: true,
+    available: false,
     image: "/images/chichick-box.png",
   },
   {
@@ -90,7 +90,7 @@ export const initialProducts: Product[] = [
     portion: "1 Box + Saus Keju",
     calories: "390 kcal",
     likes: 740,
-    available: true,
+    available: false,
     image: "/images/chichick-keju.png",
   },
   {
@@ -104,7 +104,7 @@ export const initialProducts: Product[] = [
     portion: "Ayam + Kentang",
     calories: "490 kcal",
     likes: 610,
-    available: true,
+    available: false,
     image: "/images/chichick-kentang.png",
   },
 
